@@ -140,7 +140,7 @@ button[disabled]{opacity:.5; cursor:default}
   <div>
     <p class="eyebrow">Albion Online / 製造の採算</p>
     <h1>クラフト採算表</h1>
-    <p class="sub">どの街で素材を買い、どの街で作り、どこで売るかを選ぶと、145品ぶんの原価・損益ゼロで並べられる出品額・1個の損益・名声1あたりの値段が出る。売値は<b class="hl">出来上がる品質の確率（通常68.8%・良好25%・傑出5%・優秀1.1%・名品0.1%）で重みづけした期待値</b>。</p>
+    <p class="sub">どの街で素材を買い、どの街で作り、どこで売るかを選ぶと、145品ぶんの原価・損益ゼロで並べられる出品額・1個の損益・名声1あたりの値段が出る。闇市はシステムが品質ごとに別の値段で買うので、売値は<b class="hl">出来上がる品質の確率（通常68.8%・良好25%・傑出5%・優秀1.1%・名品0.1%）で重みづけした期待値</b>。王都の市場は買う側が「全て」で検索するので品質を分けず1つの値段で見る。</p>
   </div>
   <div class="stamp" id="stamp"></div>
 </header>
@@ -213,7 +213,7 @@ button[disabled]{opacity:.5; cursor:default}
       <input type="number" id="feeRate" value="400" min="0" step="10">
     </label>
     <label class="f">製造の品質ボーナス
-      <span class="hint">%。デスティニーボードの合計。0なら基礎の確率</span>
+      <span class="hint">%。闇市で売る時だけ効く。0なら基礎の確率</span>
       <input type="number" id="qbonus" value="0" min="0" max="2000" step="5">
     </label>
     <label class="f">売却税
@@ -268,7 +268,7 @@ button[disabled]{opacity:.5; cursor:default}
 <table>
   <thead><tr>
     <th class="l">品</th><th class="l">ID</th><th>名声/個</th><th>戻り率</th><th>使用料</th>
-    <th>原価</th><th>損益ゼロ額</th><th>売値(期待値)</th><th>余裕</th>
+    <th>原価</th><th>損益ゼロ額</th><th>売値</th><th>余裕</th>
     <th>1個の損益</th><th>銀/名声</th><th>銀/フォーカス</th><th>個/日</th><th>鮮度</th>
   </tr></thead>
   <tbody id="rows"></tbody>
@@ -281,7 +281,7 @@ button[disabled]{opacity:.5; cursor:default}
     <p><b>使用料。</b>作業台は「栄養」を食べて動く。1回のクラフトで減る栄養は<b>アイテム価値の 0.1125 倍</b>で固定。作業台の持ち主が決めるのは<b>栄養100あたりのシルバー</b>だけ。</p>
     <div class="formula">使用料 = アイテム価値 × 0.1125 × 単価 ÷ 100</div>
     <p>アイテム価値は素材の価値の合計。加工済み素材は <code>T4=16</code> から1ティアごとに倍（T8=256）、エンチャント1段でも倍。T4 ソルジャーヘルメット（鋼の延べ棒8個）は 128、栄養 14.4、単価400なら約58。</p>
-    <p><b>品質。</b>作った品の品質は運で決まる。基礎は1000面ダイス1回で 通常688／良好250／傑出50／優秀11／名品1。品質ボーナス X% は「X% の確率でもう1回振って良いほうを採る」（100%を超えたぶんは振る回数が増える）。この表は<b>品質ごとの売値をその確率で重みづけした期待値</b>を売値にする。値段のない品質は、ある品質の平均で埋め、埋めた割合を明細に出す。</p>
+    <p><b>品質。</b>作った品の品質は運で決まる。基礎は1000面ダイス1回で 通常688／良好250／傑出50／優秀11／名品1。品質ボーナス X% は「X% の確率でもう1回振って良いほうを採る」（100%を超えたぶんは振る回数が増える）。<b>闇市</b>はシステムが品質ごとに別の値段で買うので、この表は品質ごとの売値をその確率で重みづけした期待値を売値にする（値段のない品質は、ある品質の平均で埋め、埋めた割合を明細に出す）。<b>王都の市場</b>は買う側が「全て」で検索して品質を気にしないので、全品質をまとめて 出品最安＝一番安い出品／即売り＝一番高い買い注文／約定＝加重平均 の1つの値段で見る。</p>
     <p class="sub">名声は アイテム価値 × 1.40625（プレミアムで ×1.5）。戻り率は 基礎15.2%／ボーナス都市36.7%／フォーカス43.5%／両方53.9%、デイリーの日はボーナス都市がさらに1.1倍。</p>
   </div>
   <div class="note">
@@ -394,9 +394,23 @@ function returnRate(it){
   return {r,city,bc};
 }
 function venuePrice(id, dist){
-  /* 品質ごとの売値を選んだ取り方で拾い、無ければ他の取り方で埋める。埋まらない品質は他の平均で埋め、その割合を返す */
-  const v=(P[id]||{})[$('venue').value]||{};
-  const order=[$('sell').value].concat(Object.keys(BASIS).filter(k=>k!==$('sell').value));
+  const venue=$('venue').value, v=(P[id]||{})[venue]||{};
+  const chosen=$('sell').value, order=[chosen].concat(Object.keys(BASIS).filter(k=>k!==chosen));
+  if(venue!=='Black Market'){
+    /* 王都の市場は買う側が「全て」で検索するので品質は値段に効かない。全品質をまとめて1つの値段にする:
+       出品最安＝全品質で一番安い出品／即売り＝全品質で一番高い買い注文／約定＝全品質の加重平均 */
+    let list=null,listAge=null,buy=null,buyAge=null,rs=0,rn=0,realAge=null,vol=0;
+    for(let q=1;q<=5;q++){ const e=v[q]; if(!e) continue;
+      if(e.list&&(list===null||e.list<list)){list=e.list; listAge=e.listAge;}
+      if(e.buy&&(buy===null||e.buy>buy)){buy=e.buy; buyAge=e.buyAge;}
+      if(e.real&&e.vol){rs+=e.real*e.vol; rn+=e.vol; if(realAge===null||e.realAge>realAge) realAge=e.realAge;}
+      if(e.vol) vol+=e.vol; }
+    const pooled={list:[list,listAge],instant:[buy,buyAge],real:[rn?rs/rn:null,realAge]};
+    for(const k of order){ const [pr,ag]=pooled[k]; if(pr) return {price:pr,covered:1,rows:null,vol,age:ag||0,fallback:k!==chosen,pooled:true}; }
+    return null;
+  }
+  /* 闇市はシステムが品質ごとに別の値段で買う。品質ごとの売値を選んだ取り方で拾い、無ければ他の取り方で埋める。
+     埋まらない品質は他の平均で埋め、その割合を返す */
   const rows=[]; let covered=0, ev=0, vol=0, worstAge=0;
   for(let q=1;q<=5;q++){
     const e=v[q]||{}; let price=0, used=null, age=null;
@@ -406,7 +420,7 @@ function venuePrice(id, dist){
     if(price){ covered+=dist[q-1]; ev+=dist[q-1]*price; if(age!=null&&age>worstAge) worstAge=age; }
   }
   if(covered<0.5) return null;
-  return {price:ev/covered, covered, rows, vol, age:worstAge, fallback:rows.some(r=>r.price&&r.used!==$('sell').value)};
+  return {price:ev/covered, covered, rows, vol, age:worstAge, fallback:rows.some(r=>r.price&&r.used!==chosen), pooled:false};
 }
 function calc(id, rrrOverride){
   const it=DB.items[id], dist=qdist(+$('qbonus').value||0);
@@ -435,7 +449,10 @@ const ageTxt=a=>a==null?'–':(a<1?'今':a<48?a.toFixed(0)+'h':Math.round(a/24)+
 function render(){
   const craft=$('craft').value, venue=$('venue').value, src=$('src').value;
   const dist=qdist(+$('qbonus').value||0);
-  $('qdist').innerHTML='出来上がる品質の見込み: '+dist.map((p,i)=>QNAME[i+1]+' <b>'+(p*100).toFixed(1)+'%</b>').join('　');
+  $('qdist').innerHTML=(venue==='Black Market'
+    ?'出来上がる品質の見込み: '+dist.map((p,i)=>QNAME[i+1]+' <b>'+(p*100).toFixed(1)+'%</b>').join('　')+'　→ 闇市は品質ごとに別の値段で買うので、売値はこの確率で重みづけした期待値'
+    :'売り先が王都の市場なので<b>品質は値段に効かない</b>（買う側は「全て」で検索する）。全品質をまとめて 出品最安＝一番安い出品／即売り＝一番高い買い注文／約定＝加重平均 で見る。品質ボーナスの欄はここでは使わない');
+  $('qbonus').disabled=(venue!=='Black Market');
   const legs=[];
   if(src==='cheap') legs.push('素材は最安の街から '+CITY_JA[craft]+' へ運ぶ');
   if(venue!=='Black Market'&&venue!==craft) legs.push(CITY_JA[craft]+' で作った品を '+CITY_JA[venue]+' へ運ぶ');
@@ -486,7 +503,7 @@ function render(){
     const spf=silverPerFocus(selected);
     const res=r.it.res.map(([m,c])=>'<div class="sub">'+matJa(m)+' × '+c+' @ '+fmt(matPrice[m])+'</div><div class="r sub">'+fmt(matPrice[m]*c)+'</div>').join('');
     const v=(P[selected]||{})[venue]||{};
-    const qrows=r.vp.rows.map(x=>{ const e=v[x.q]||{};
+    const qrows=r.vp.pooled?'':r.vp.rows.map(x=>{ const e=v[x.q]||{};
       return '<tr><td class="l">'+QNAME[x.q]+'</td><td>'+(x.p*100).toFixed(1)+'%</td>'
         +'<td>'+(e.buy?fmt(e.buy):'–')+'</td><td>'+(e.list?fmt(e.list):'–')+'</td><td>'+(e.real?fmt(e.real):'–')+'</td><td>'+(e.vol?fmt(e.vol):'–')+'</td>'
         +'<td>'+(x.price?fmt(x.price)+(x.used!==$('sell').value?'<span class="age"> ('+BASIS[x.used][0].replace('今の','').replace('直近7日の','')+'で代用)</span>':''):'<span class="age">平均で埋めた</span>')+'</td>'
@@ -494,8 +511,12 @@ function render(){
     d.hidden=false;
     d.innerHTML='<h3>'+r.it.jaFull+'　<span style="font-family:var(--mono);font-size:12px;color:var(--faint)">'+r.it.en+' / '+selected+'</span></h3>'
      +'<p class="sub" style="margin:-6px 0 12px">ゲーム内の市場ではこの名前で検索する。下の品質別の板を '+CITY_JA[venue]+' の画面と見比べれば、この表が今の相場に追いついているか分かる。</p>'
-     +'<div class="scroll" style="margin-bottom:16px"><table style="min-width:640px"><thead><tr><th class="l">品質</th><th>出る確率</th><th>買い注文</th><th>出品最安</th><th>約定7日</th><th>個/日</th><th>使う売値</th><th>確率×売値</th></tr></thead><tbody>'+qrows
-     +'<tr><td class="l" style="font-weight:700">期待値</td><td></td><td></td><td></td><td></td><td>'+fmt(r.vol)+'</td><td class="age">値段のある品質 '+(r.vp.covered*100).toFixed(0)+'%</td><td style="font-weight:700">'+fmt(r.price)+'</td></tr></tbody></table></div>'
+     +(r.vp.pooled
+        ?'<div class="scroll" style="margin-bottom:16px"><table style="min-width:520px"><thead><tr><th class="l">品質</th><th>買い注文</th><th>出品最安</th><th>約定7日</th><th>個/日</th></tr></thead><tbody>'
+          +[1,2,3,4,5].map(q=>{const e=v[q]; return e?'<tr><td class="l">'+QNAME[q]+'</td><td>'+(e.buy?fmt(e.buy):'–')+'</td><td>'+(e.list?fmt(e.list):'–')+'</td><td>'+(e.real?fmt(e.real):'–')+'</td><td>'+(e.vol?fmt(e.vol):'–')+'</td></tr>':'';}).join('')
+          +'<tr><td class="l" style="font-weight:700">全品質まとめ</td><td colspan="3" class="age" style="text-align:left">'+BASIS[$('sell').value][0]+'基準 → <b style="color:var(--ink)">'+fmt(r.price)+'</b>（王都は買う側が「全て」で検索するので品質は値段に効かない）</td><td>'+fmt(r.vol)+'</td></tr></tbody></table></div>'
+        :'<div class="scroll" style="margin-bottom:16px"><table style="min-width:640px"><thead><tr><th class="l">品質</th><th>出る確率</th><th>買い注文</th><th>出品最安</th><th>約定7日</th><th>個/日</th><th>使う売値</th><th>確率×売値</th></tr></thead><tbody>'+qrows
+          +'<tr><td class="l" style="font-weight:700">期待値</td><td></td><td></td><td></td><td></td><td>'+fmt(r.vol)+'</td><td class="age">値段のある品質 '+(r.vp.covered*100).toFixed(0)+'%</td><td style="font-weight:700">'+fmt(r.price)+'</td></tr></tbody></table></div>')
      +'<div class="ledger">'+res
      +'<div>素材の生の合計</div><div class="r">'+fmt(r.raw)+'</div>'
      +'<div class="sub">戻り率 '+(r.rrr*100).toFixed(1)+'%'+(r.bc?(r.city?'（'+CITY_JA[r.bc]+'はこの品のボーナス都市）':'（ボーナス都市は '+CITY_JA[r.bc]+'。'+CITY_JA[craft]+'では付かない）'):'（ボーナス都市は未確認）')+'</div><div class="r sub">−'+fmt(r.raw*r.rrr)+'</div>'
@@ -503,7 +524,7 @@ function render(){
      +'<div class="sub">使用料: 価値 '+r.it.value+' × 0.1125 = 栄養 '+r.nutrition.toFixed(1)+' × '+($('feeRate').value||0)+'/100</div><div class="r sub">'+fmt(r.fee)+'</div>'
      +'<div class="tot">原価</div><div class="r tot">'+fmt(r.cost)+'</div>'
      +'<div>損益ゼロで並べられる出品額</div><div class="r">'+fmt(r.be)+'</div>'
-     +'<div>売値の期待値（'+CITY_JA[venue]+'・'+BASIS[$('sell').value][0]+'・最古 '+ageTxt(r.priceAge)+'）</div><div class="r">'+fmt(r.price)+'</div>'
+     +'<div>売値'+(r.vp.pooled?'（全品質まとめ・':'の期待値（')+CITY_JA[venue]+'・'+BASIS[$('sell').value][0]+'・最古 '+ageTxt(r.priceAge)+'）</div><div class="r">'+fmt(r.price)+'</div>'
      +'<div class="sub">手数料・税を引いた手取り（×'+r.keep.toFixed(3)+'）</div><div class="r sub">'+fmt(r.net)+'</div>'
      +'<div class="tot">1個の損益</div><div class="r tot '+(r.profit>=0?'gain':'loss')+'">'+sgn(r.profit)+'</div>'
      +'<div>名声/個（価値 '+r.it.value+' × 1.40625'+($('prem').checked?' × 1.5':'')+'）</div><div class="r">'+fmt(r.fame)+'</div>'
