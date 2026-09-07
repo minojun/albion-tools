@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>*{box-sizing:border-box}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>闇市クラフト採算表</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#e9edec; --surface:#fff; --surface-2:#f3f6f5;
+  --ink:#131c1b; --muted:#5c6e6b; --faint:#869895;
+  --brass:#9a6b22; --brass-soft:#f0e4cd;
+  --gain:#146b4c; --loss:#9e2e28; --warn:#8a6410;
+  --rule:#ccd6d4; --rule-soft:#e0e7e6;
+  --jp:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic",system-ui,sans-serif;
+  --mincho:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho",serif;
+  --mono:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --ground:#0f1615; --surface:#17201e; --surface-2:#1d2725;
+  --ink:#e6ece9; --muted:#8fa29e; --faint:#6d807c;
+  --brass:#dca84e; --brass-soft:#2c2517;
+  --gain:#4fc08d; --loss:#e9776a; --warn:#d8ae4a;
+  --rule:#26332f; --rule-soft:#1f2b28;
+}}
+:root[data-theme="dark"]{
+  --ground:#0f1615; --surface:#17201e; --surface-2:#1d2725;
+  --ink:#e6ece9; --muted:#8fa29e; --faint:#6d807c;
+  --brass:#dca84e; --brass-soft:#2c2517;
+  --gain:#4fc08d; --loss:#e9776a; --warn:#d8ae4a;
+  --rule:#26332f; --rule-soft:#1f2b28;
+}
+*{box-sizing:border-box}
+body{background:var(--ground); color:var(--ink); font-family:var(--jp); line-height:1.65;
+  -webkit-font-smoothing:antialiased; padding:0 20px 72px}
+.wrap{max-width:1120px; margin:0 auto}
+
+header.masthead{border-top:3px solid var(--brass); padding:26px 0 18px; display:flex;
+  flex-wrap:wrap; align-items:flex-end; gap:12px 28px; justify-content:space-between}
+h1{font-family:var(--mincho); font-weight:800; font-size:clamp(26px,4vw,38px); margin:0;
+  letter-spacing:.02em; text-wrap:balance}
+.sub{color:var(--muted); font-size:13px; max-width:60ch; margin:6px 0 0}
+.stamp{font-family:var(--mono); font-size:11.5px; color:var(--faint); text-align:right; line-height:1.5}
+
+h2{font-family:var(--mincho); font-weight:600; font-size:19px; margin:36px 0 12px;
+  padding-bottom:7px; border-bottom:1px solid var(--rule)}
+.eyebrow{font-size:11px; letter-spacing:.14em; color:var(--brass); font-weight:700; margin:0 0 4px}
+
+.panel{background:var(--surface); border:1px solid var(--rule); padding:18px 20px 20px}
+.grid{display:grid; gap:16px 22px; grid-template-columns:repeat(auto-fit,minmax(196px,1fr))}
+label.f{display:flex; flex-direction:column; gap:5px; font-size:12px; color:var(--muted); font-weight:500}
+label.f .hint{font-size:11px; color:var(--faint); font-weight:400}
+input[type=number],select{font-family:var(--mono); font-size:14px; padding:7px 9px;
+  background:var(--surface-2); color:var(--ink); border:1px solid var(--rule); border-radius:2px; width:100%}
+input[type=number]:focus-visible,select:focus-visible,button:focus-visible,tr:focus-visible{
+  outline:2px solid var(--brass); outline-offset:1px}
+.primary-field input{border-color:var(--brass); background:var(--brass-soft); font-weight:500}
+.checks{display:flex; flex-wrap:wrap; gap:8px 18px; margin-top:16px; padding-top:14px;
+  border-top:1px solid var(--rule-soft)}
+label.c{display:flex; align-items:center; gap:7px; font-size:13px; cursor:pointer}
+input[type=checkbox]{accent-color:var(--brass); width:15px; height:15px}
+
+.strip{display:grid; gap:1px; grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  background:var(--rule); border:1px solid var(--rule); margin-top:1px}
+.cell{background:var(--surface); padding:14px 16px}
+.cell .k{font-size:11px; letter-spacing:.1em; color:var(--muted); font-weight:700}
+.cell .v{font-family:var(--mono); font-size:23px; font-weight:500; margin-top:3px;
+  font-variant-numeric:tabular-nums}
+.cell .n{font-size:11.5px; color:var(--faint); margin-top:2px}
+
+.scroll{overflow-x:auto; border:1px solid var(--rule); background:var(--surface)}
+table{border-collapse:collapse; width:100%; font-size:13px; min-width:960px}
+th{font-size:10.5px; letter-spacing:.06em; color:var(--muted); font-weight:700; text-align:right;
+  padding:9px 9px; border-bottom:1px solid var(--rule); background:var(--surface-2);
+  position:sticky; top:0; white-space:nowrap}
+th:first-child,td:first-child{text-align:left; padding-left:14px}
+th.l,td.l{text-align:left}
+td{padding:7px 9px; text-align:right; border-bottom:1px solid var(--rule-soft);
+  font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap}
+td.name{font-family:var(--jp); font-weight:500}
+td.id{font-size:11px; color:var(--faint)}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--surface-2)}
+tbody tr.sel{background:var(--brass-soft)}
+.gain{color:var(--gain); font-weight:500}
+.loss{color:var(--loss)}
+.chip{display:inline-block; padding:1px 7px; border-radius:9px; font-size:11px; font-weight:700;
+  font-family:var(--mono)}
+.chip.ok{background:var(--gain); color:var(--surface)}
+.chip.thin{background:var(--warn); color:var(--surface)}
+.chip.no{background:var(--rule); color:var(--muted)}
+
+.detail{border:1px solid var(--brass); background:var(--surface); padding:18px 20px}
+.detail h3{font-family:var(--jp); font-size:15px; margin:0 0 12px; font-weight:700}
+.ledger{display:grid; grid-template-columns:1fr auto; gap:0; max-width:520px; font-size:13px}
+.ledger div{padding:5px 0; border-bottom:1px solid var(--rule-soft)}
+.ledger .r{text-align:right; font-family:var(--mono); font-variant-numeric:tabular-nums}
+.ledger .tot{border-bottom:none; border-top:2px solid var(--rule); font-weight:700; padding-top:7px}
+.ledger .sub{color:var(--muted); font-size:12px; padding-left:12px}
+
+.notes{display:grid; gap:20px; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); margin-top:8px}
+.note{font-size:13px; color:var(--ink)}
+.note p{margin:0 0 9px}
+.note ol,.note ul{margin:0; padding-left:1.35em}
+.note li{margin-bottom:7px}
+code{font-family:var(--mono); font-size:12.5px; background:var(--surface-2);
+  padding:1px 5px; border:1px solid var(--rule-soft)}
+.formula{font-family:var(--mono); font-size:13px; background:var(--surface);
+  border-left:3px solid var(--brass); padding:10px 13px; margin:10px 0; overflow-x:auto}
+b.hl{color:var(--brass)}
+.matgrid{display:grid; gap:8px 14px; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); margin-top:12px}
+label.m{display:flex; align-items:center; justify-content:space-between; gap:8px;
+  font-family:var(--mono); font-size:12px; border-bottom:1px solid var(--rule-soft); padding-bottom:4px}
+label.m input{width:78px; padding:3px 6px; font-size:12px; text-align:right}
+label.m .age{color:var(--faint); font-size:10.5px}
+@media (prefers-reduced-motion:no-preference){tbody tr{transition:background .12s ease}}
+</style>
+<style>
+.bar{display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px; padding:10px 14px;
+  background:var(--surface); border:1px solid var(--rule); border-left:3px solid var(--brass); margin-bottom:4px}
+label.inline{display:flex; align-items:center; gap:7px; font-size:12px; color:var(--muted); font-weight:500}
+label.inline select{width:auto; min-width:132px}
+button{font-family:var(--jp); font-size:12.5px; font-weight:700; padding:6px 14px; cursor:pointer;
+  background:var(--brass); color:var(--surface); border:none; border-radius:2px}
+button:hover{filter:brightness(1.08)}
+button[disabled]{opacity:.5; cursor:default}
+.status{font-family:var(--mono); font-size:11.5px; color:var(--muted); flex:1 1 220px}
+.status.bad{color:var(--loss)}
+.status.good{color:var(--gain)}
+.foot{margin-top:34px; padding-top:14px; border-top:1px solid var(--rule);
+  font-size:11.5px; color:var(--faint); max-width:70ch}
+.foot a{color:var(--muted)}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+<header class="masthead">
+  <div>
+    <p class="eyebrow">カーレオン現地クラフト → 闇市</p>
+    <h1>闇市クラフト採算表</h1>
+    <p class="sub">作業台で見た<b class="hl">「栄養100あたりのシルバー」</b>を入れると、145品ぶんの使用料・損益ゼロで並べられる出品額・名声1あたりの値段が全部出る。持ち物ゼロで旅行業者を使えばロスト額はゼロなので、判断材料は値段だけになる。</p>
+  </div>
+  <div class="stamp" id="stamp"></div>
+</header>
+
+<div class="bar">
+  <label class="inline">サーバー
+    <select id="server">
+      <option value="east">東 (Asia)</option>
+      <option value="west">西 (Americas)</option>
+      <option value="europe">ヨーロッパ</option>
+    </select>
+  </label>
+  <button id="reload" type="button">価格を取り直す</button>
+  <span class="status" id="status">読み込み中…</span>
+</div>
+
+<h2>条件</h2>
+<div class="panel">
+  <div class="grid">
+    <label class="f primary-field">作業台の使用料
+      <span class="hint">栄養100あたりのシルバー（作業台の表示）</span>
+      <input type="number" id="feeRate" value="400" min="0" step="10">
+    </label>
+    <label class="f">素材の仕入れ先
+      <span class="hint">カーレオン以外を選ぶと輸送が必要</span>
+      <select id="src">
+        <option value="cae">カーレオン（ロストゼロ）</option>
+        <option value="cheap">カーレオン以外の最安の街（要輸送）</option>
+        <option value="manual">下の表に手入力</option>
+      </select>
+    </label>
+    <label class="f">闇市での売り方
+      <span class="hint">出品＝並べて待つ／即売り＝買い注文に流す</span>
+      <select id="sell">
+        <option value="realized">出品（直近7日の約定値）</option>
+        <option value="listed">出品（今の出品最安値）</option>
+        <option value="instant">即売り（今の買い注文）</option>
+      </select>
+    </label>
+    <label class="f">売却税
+      <span class="hint">プレミアム 4% / 非 8%</span>
+      <input type="number" id="tax" value="4" min="0" max="20" step="0.5">
+    </label>
+    <label class="f">出品の設定手数料
+      <span class="hint">売れなくても戻らない</span>
+      <input type="number" id="setup" value="2.5" min="0" max="10" step="0.5">
+    </label>
+    <label class="f">1回に作る個数
+      <span class="hint">合計の名声と損益に使う</span>
+      <input type="number" id="qty" value="100" min="1" step="10">
+    </label>
+  </div>
+  <div class="checks">
+    <label class="c"><input type="checkbox" id="prem" checked>プレミアム（名声 +50%）</label>
+    <label class="c"><input type="checkbox" id="city">その品のボーナス都市で作る（カーレオンでは基礎3種はオフ）</label>
+    <label class="c"><input type="checkbox" id="daily">デイリー生産ボーナスの日（ボーナス都市のみ有効）</label>
+    <label class="c"><input type="checkbox" id="focus">フォーカスを使う</label>
+    <label class="c"><input type="checkbox" id="hideThin" checked>闇市の出来高が1日100個未満を隠す</label>
+  </div>
+  <p class="sub" style="margin-top:12px">素材の戻り率 <b class="hl" id="rrrOut">15.2%</b>　／　1個あたりの素材の実費 = 素材の生の合計 ×（1 − 戻り率）</p>
+</div>
+
+<div class="strip">
+  <div class="cell"><div class="k">タダで名声が入る品</div><div class="v" id="s1">–</div><div class="n" id="s1n">損益ゼロ以上（銀/名声 = 0）</div></div>
+  <div class="cell"><div class="k">いちばん安い名声</div><div class="v" id="s2">–</div><div class="n" id="s2n">&nbsp;</div></div>
+  <div class="cell"><div class="k">この個数で入る名声</div><div class="v" id="s3">–</div><div class="n" id="s3n">&nbsp;</div></div>
+  <div class="cell"><div class="k">その時の損益</div><div class="v" id="s4">–</div><div class="n" id="s4n">&nbsp;</div></div>
+</div>
+
+<h2>素材の値段（1個あたり）</h2>
+<div class="panel">
+  <p class="sub" style="margin:0">仕入れ先を切り替えると自動で入る。ゲーム内の板と違ったら直接書き換えれば、下の表が全部追従する。括弧はデータの古さ（時間）。</p>
+  <div class="matgrid" id="mats"></div>
+</div>
+
+<h2>品ごとの採算（銀/名声の安い順）</h2>
+<div class="detail" id="detail" hidden></div>
+<p class="sub" id="tblnote" style="margin:0 0 8px">&nbsp;</p>
+<div class="scroll">
+<table>
+  <thead><tr>
+    <th class="l">品</th><th class="l">ID</th><th>名声/個</th><th>栄養</th><th>使用料</th>
+    <th>素材の実費</th><th>損益ゼロ額</th><th>闇市の売値</th><th>余裕</th>
+    <th>1個の損益</th><th>銀/名声</th><th>銀/フォーカス</th><th>個/日</th>
+  </tr></thead>
+  <tbody id="rows"></tbody>
+</table>
+</div>
+
+<h2>栄養と使用料の仕組み</h2>
+<div class="notes">
+  <div class="note">
+    <p>作業台は「栄養」を食べて動く。1回のクラフトで減る栄養は<b>アイテム価値の 0.1125 倍</b>で固定。作業台の持ち主が決めるのは<b>栄養100あたりのシルバー</b>だけなので、掛け算すれば実額が出る。</p>
+    <div class="formula">使用料 = アイテム価値 × 0.1125 × 単価 ÷ 100</div>
+    <p>アイテム価値は素材の価値の合計。加工済み素材は <code>T4=16</code> から1ティアごとに倍（T8=256）、エンチャント1段でも倍。だから T4 プレートヘルメット（T4 延べ棒 8個）は 8×16 = <b>128</b>、栄養 14.4、単価400なら <b>約58シルバー</b>。</p>
+    <p class="sub">名声は アイテム価値 × 1.40625（プレミアムで ×1.5）。T4 兜なら 180 / プレミアム 270。</p>
+  </div>
+  <div class="note">
+    <p><b>この表が見ていないもの3つ。</b>余裕が数%の品はここで消える。</p>
+    <ol>
+      <li><b>板の厚み。</b>素材の値段は「一番安い1件」。T4 布ヘルメット100個には布800個が必要で、買い上げれば値は上がる。余裕が10%を切る品は、実際に並んでいる数を見てから決める。</li>
+      <li><b>出品が埋まるか。</b>闇市の需要は上限つきの補充制。損益ゼロぎりぎりで並べると、埋まるまで待つあいだ資金が寝る。設定手数料は売れなくても戻らない。</li>
+      <li><b>製造名声はその品のノードにしか入らない。</b>布ヘルメットを作っても鉱石→延べ棒→プレートの線は伸びない。一本線に効かせるならプレート系の行だけを見る。</li>
+    </ol>
+  </div>
+</div>
+
+<p class="foot">価格は <a href="https://www.albion-online-data.com/">Albion Online Data Project</a> の公開 API（利用者のクライアントが見た時だけ更新される。鮮度を必ず見る）。レシピ・アイテム価値・フォーカス消費は公式ゲームデータ <a href="https://github.com/ao-data/ao-bin-dumps">ao-data/ao-bin-dumps</a> の <code>items.xml</code> から。個人用の計算機で、Sandbox Interactive とは無関係。</p>
+</div>
+
+<script>
+const DB={"generated":"2026-09-07 12:28 UTC","items":{"T4_HEAD_PLATE_SET1":{"t":4,"ja":"T4 ソルジャーヘルメット","focus":429.0,"res":[["T4_METALBAR",8]],"value":128,"line":"PLATE","slot":"HEAD","jaFull":"ソルジャーヘルメット（名人）","en":"Adept's Soldier Helmet"},"T4_HEAD_PLATE_SET2":{"t":4,"ja":"T4 騎士のヘルメット","focus":429.0,"res":[["T4_METALBAR",8]],"value":128,"line":"PLATE","slot":"HEAD","jaFull":"騎士のヘルメット（名人）","en":"Adept's Knight Helmet"},"T4_HEAD_PLATE_SET3":{"t":4,"ja":"T4 ガーディアンヘルメット","focus":429.0,"res":[["T4_METALBAR",8]],"value":128,"line":"PLATE","slot":"HEAD","jaFull":"ガーディアンヘルメット（名人）","en":"Adept's Guardian Helmet"},"T4_ARMOR_PLATE_SET1":{"t":4,"ja":"T4 ソルジャーアーマー","focus":858.0,"res":[["T4_METALBAR",16]],"value":256,"line":"PLATE","slot":"ARMOR","jaFull":"ソルジャーアーマー（名人）","en":"Adept's Soldier Armor"},"T4_ARMOR_PLATE_SET2":{"t":4,"ja":"T4 騎士のアーマー","focus":858.0,"res":[["T4_METALBAR",16]],"value":256,"line":"PLATE","slot":"ARMOR","jaFull":"騎士のアーマー（名人）","en":"Adept's Knight Armor"},"T4_ARMOR_PLATE_SET3":{"t":4,"ja":"T4 ガーディアンアーマー","focus":858.0,"res":[["T4_METALBAR",16]],"value":256,"line":"PLATE","slot":"ARMOR","jaFull":"ガーディアンアーマー（名人）","en":"Adept's Guardian Armor"},"T4_SHOES_PLATE_SET1":{"t":4,"ja":"T4 ソルジャーブーツ","focus":429.0,"res":[["T4_METALBAR",8]],"value":128,"line":"PLATE","slot":"SHOES","jaFull":"ソルジャーブーツ（名人）","en":"Adept's Soldier Boots"},"T4_SHOES_PLATE_SET2":{"t":4,"ja":"T4 騎士のブーツ","focus":429.0,"res":[["T4_METALBAR",8]],"value":128,"line":"PLATE","slot":"SHOES","jaFull":"騎士のブーツ（名人）","en":"Adept's Knight Boots"},"T4_SHOES_PLATE_SET3":{"t":4,"ja":"T4 ガーディアンブーツ","focus":429.0,"res":[["T4_METALBAR",8]],"value":128,"line":"PLATE","slot":"SHOES","jaFull":"ガーディアンブーツ（名人）","en":"Adept's Guardian Boots"},"T4_HEAD_LEATHER_SET1":{"t":4,"ja":"T4 傭兵フード","focus":429.0,"res":[["T4_LEATHER",8]],"value":128,"line":"LEATHER","slot":"HEAD","jaFull":"傭兵フード（名人）","en":"Adept's Mercenary Hood"},"T4_HEAD_LEATHER_SET2":{"t":4,"ja":"T4 狩人のフード","focus":429.0,"res":[["T4_LEATHER",8]],"value":128,"line":"LEATHER","slot":"HEAD","jaFull":"狩人のフード（名人）","en":"Adept's Hunter Hood"},"T4_HEAD_LEATHER_SET3":{"t":4,"ja":"T4 アサシンのフード","focus":429.0,"res":[["T4_LEATHER",8]],"value":128,"line":"LEATHER","slot":"HEAD","jaFull":"アサシンのフード（名人）","en":"Adept's Assassin Hood"},"T4_ARMOR_LEATHER_SET1":{"t":4,"ja":"T4 傭兵のジャケット","focus":858.0,"res":[["T4_LEATHER",16]],"value":256,"line":"LEATHER","slot":"ARMOR","jaFull":"傭兵のジャケット（名人）","en":"Adept's Mercenary Jacket"},"T4_ARMOR_LEATHER_SET2":{"t":4,"ja":"T4 狩人のジャケット","focus":858.0,"res":[["T4_LEATHER",16]],"value":256,"line":"LEATHER","slot":"ARMOR","jaFull":"狩人のジャケット（名人）","en":"Adept's Hunter Jacket"},"T4_ARMOR_LEATHER_SET3":{"t":4,"ja":"T4 アサシンジャケット","focus":858.0,"res":[["T4_LEATHER",16]],"value":256,"line":"LEATHER","slot":"ARMOR","jaFull":"アサシンジャケット（名人）","en":"Adept's Assassin Jacket"},"T4_SHOES_LEATHER_SET1":{"t":4,"ja":"T4 傭兵の靴","focus":429.0,"res":[["T4_LEATHER",8]],"value":128,"line":"LEATHER","slot":"SHOES","jaFull":"傭兵の靴（名人）","en":"Adept's Mercenary Shoes"},"T4_SHOES_LEATHER_SET2":{"t":4,"ja":"T4 狩人の靴","focus":429.0,"res":[["T4_LEATHER",8]],"value":128,"line":"LEATHER","slot":"SHOES","jaFull":"狩人の靴（名人）","en":"Adept's Hunter Shoes"},"T4_SHOES_LEATHER_SET3":{"t":4,"ja":"T4 アサシンの靴","focus":429.0,"res":[["T4_LEATHER",8]],"value":128,"line":"LEATHER","slot":"SHOES","jaFull":"アサシンの靴（名人）","en":"Adept's Assassin Shoes"},"T4_HEAD_CLOTH_SET1":{"t":4,"ja":"T4 学徒の頭巾","focus":429.0,"res":[["T4_CLOTH",8]],"value":128,"line":"CLOTH","slot":"HEAD","jaFull":"学徒の頭巾（名人）","en":"Adept's Scholar Cowl"},"T4_HEAD_CLOTH_SET2":{"t":4,"ja":"T4 聖職者の頭巾","focus":429.0,"res":[["T4_CLOTH",8]],"value":128,"line":"CLOTH","slot":"HEAD","jaFull":"聖職者の頭巾（名人）","en":"Adept's Cleric Cowl"},"T4_HEAD_CLOTH_SET3":{"t":4,"ja":"T4 魔法使いの頭巾","focus":429.0,"res":[["T4_CLOTH",8]],"value":128,"line":"CLOTH","slot":"HEAD","jaFull":"魔法使いの頭巾（名人）","en":"Adept's Mage Cowl"},"T4_ARMOR_CLOTH_SET1":{"t":4,"ja":"T4 学徒のローブ","focus":858.0,"res":[["T4_CLOTH",16]],"value":256,"line":"CLOTH","slot":"ARMOR","jaFull":"学徒のローブ（名人）","en":"Adept's Scholar Robe"},"T4_ARMOR_CLOTH_SET2":{"t":4,"ja":"T4 聖職者のローブ","focus":858.0,"res":[["T4_CLOTH",16]],"value":256,"line":"CLOTH","slot":"ARMOR","jaFull":"聖職者のローブ（名人）","en":"Adept's Cleric Robe"},"T4_ARMOR_CLOTH_SET3":{"t":4,"ja":"T4 魔法使いのローブ","focus":858.0,"res":[["T4_CLOTH",16]],"value":256,"line":"CLOTH","slot":"ARMOR","jaFull":"魔法使いのローブ（名人）","en":"Adept's Mage Robe"},"T4_SHOES_CLOTH_SET1":{"t":4,"ja":"T4 学徒のサンダル","focus":429.0,"res":[["T4_CLOTH",8]],"value":128,"line":"CLOTH","slot":"SHOES","jaFull":"学徒のサンダル（名人）","en":"Adept's Scholar Sandals"},"T4_SHOES_CLOTH_SET2":{"t":4,"ja":"T4 聖職者のサンダル","focus":429.0,"res":[["T4_CLOTH",8]],"value":128,"line":"CLOTH","slot":"SHOES","jaFull":"聖職者のサンダル（名人）","en":"Adept's Cleric Sandals"},"T4_SHOES_CLOTH_SET3":{"t":4,"ja":"T4 魔法使いのサンダル","focus":429.0,"res":[["T4_CLOTH",8]],"value":128,"line":"CLOTH","slot":"SHOES","jaFull":"魔法使いのサンダル（名人）","en":"Adept's Mage Sandals"},"T4_BAG":{"t":4,"ja":"T4 袋","focus":858.0,"res":[["T4_CLOTH",8],["T4_LEATHER",8]],"value":256,"line":"BAG","slot":"BAG","jaFull":"袋（名人）","en":"Adept's Bag"},"T4_CAPE":{"t":4,"ja":"T4 ケープ","focus":429.0,"res":[["T4_CLOTH",4],["T4_LEATHER",4]],"value":128,"line":"CAPE","slot":"CAPE","jaFull":"ケープ（名人）","en":"Adept's Cape"},"T5_HEAD_PLATE_SET1":{"t":5,"ja":"T5 ソルジャーヘルメット","focus":750.0,"res":[["T5_METALBAR",8]],"value":256,"line":"PLATE","slot":"HEAD","jaFull":"ソルジャーヘルメット（達人）","en":"Expert's Soldier Helmet"},"T5_HEAD_PLATE_SET2":{"t":5,"ja":"T5 騎士のヘルメット","focus":750.0,"res":[["T5_METALBAR",8]],"value":256,"line":"PLATE","slot":"HEAD","jaFull":"騎士のヘルメット（達人）","en":"Expert's Knight Helmet"},"T5_HEAD_PLATE_SET3":{"t":5,"ja":"T5 ガーディアンヘルメット","focus":750.0,"res":[["T5_METALBAR",8]],"value":256,"line":"PLATE","slot":"HEAD","jaFull":"ガーディアンヘルメット（達人）","en":"Expert's Guardian Helmet"},"T5_ARMOR_PLATE_SET1":{"t":5,"ja":"T5 ソルジャーアーマー","focus":1501.0,"res":[["T5_METALBAR",16]],"value":512,"line":"PLATE","slot":"ARMOR","jaFull":"ソルジャーアーマー（達人）","en":"Expert's Soldier Armor"},"T5_ARMOR_PLATE_SET2":{"t":5,"ja":"T5 騎士のアーマー","focus":1501.0,"res":[["T5_METALBAR",16]],"value":512,"line":"PLATE","slot":"ARMOR","jaFull":"騎士のアーマー（達人）","en":"Expert's Knight Armor"},"T5_ARMOR_PLATE_SET3":{"t":5,"ja":"T5 ガーディアンアーマー","focus":1501.0,"res":[["T5_METALBAR",16]],"value":512,"line":"PLATE","slot":"ARMOR","jaFull":"ガーディアンアーマー（達人）","en":"Expert's Guardian Armor"},"T5_SHOES_PLATE_SET1":{"t":5,"ja":"T5 ソルジャーブーツ","focus":750.0,"res":[["T5_METALBAR",8]],"value":256,"line":"PLATE","slot":"SHOES","jaFull":"ソルジャーブーツ（達人）","en":"Expert's Soldier Boots"},"T5_SHOES_PLATE_SET2":{"t":5,"ja":"T5 騎士のブーツ","focus":750.0,"res":[["T5_METALBAR",8]],"value":256,"line":"PLATE","slot":"SHOES","jaFull":"騎士のブーツ（達人）","en":"Expert's Knight Boots"},"T5_SHOES_PLATE_SET3":{"t":5,"ja":"T5 ガーディアンブーツ","focus":750.0,"res":[["T5_METALBAR",8]],"value":256,"line":"PLATE","slot":"SHOES","jaFull":"ガーディアンブーツ（達人）","en":"Expert's Guardian Boots"},"T5_HEAD_LEATHER_SET1":{"t":5,"ja":"T5 傭兵のフード","focus":750.0,"res":[["T5_LEATHER",8]],"value":256,"line":"LEATHER","slot":"HEAD","jaFull":"傭兵のフード（達人）","en":"Expert's Mercenary Hood"},"T5_HEAD_LEATHER_SET2":{"t":5,"ja":"T5 狩人のフード","focus":750.0,"res":[["T5_LEATHER",8]],"value":256,"line":"LEATHER","slot":"HEAD","jaFull":"狩人のフード（達人）","en":"Expert's Hunter Hood"},"T5_HEAD_LEATHER_SET3":{"t":5,"ja":"T5 アサシンのフード","focus":750.0,"res":[["T5_LEATHER",8]],"value":256,"line":"LEATHER","slot":"HEAD","jaFull":"アサシンのフード（達人）","en":"Expert's Assassin Hood"},"T5_ARMOR_LEATHER_SET1":{"t":5,"ja":"T5 傭兵のジャケット","focus":1501.0,"res":[["T5_LEATHER",16]],"value":512,"line":"LEATHER","slot":"ARMOR","jaFull":"傭兵のジャケット（達人）","en":"Expert's Mercenary Jacket"},"T5_ARMOR_LEATHER_SET2":{"t":5,"ja":"T5 狩人のジャケット","focus":1501.0,"res":[["T5_LEATHER",16]],"value":512,"line":"LEATHER","slot":"ARMOR","jaFull":"狩人のジャケット（達人）","en":"Expert's Hunter Jacket"},"T5_ARMOR_LEATHER_SET3":{"t":5,"ja":"T5 アサシンジャケット","focus":1501.0,"res":[["T5_LEATHER",16]],"value":512,"line":"LEATHER","slot":"ARMOR","jaFull":"アサシンジャケット（達人）","en":"Expert's Assassin Jacket"},"T5_SHOES_LEATHER_SET1":{"t":5,"ja":"T5 傭兵の靴","focus":750.0,"res":[["T5_LEATHER",8]],"value":256,"line":"LEATHER","slot":"SHOES","jaFull":"傭兵の靴（達人）","en":"Expert's Mercenary Shoes"},"T5_SHOES_LEATHER_SET2":{"t":5,"ja":"T5 狩人の靴","focus":750.0,"res":[["T5_LEATHER",8]],"value":256,"line":"LEATHER","slot":"SHOES","jaFull":"狩人の靴（達人）","en":"Expert's Hunter Shoes"},"T5_SHOES_LEATHER_SET3":{"t":5,"ja":"T5 アサシンの靴","focus":750.0,"res":[["T5_LEATHER",8]],"value":256,"line":"LEATHER","slot":"SHOES","jaFull":"アサシンの靴（達人）","en":"Expert's Assassin Shoes"},"T5_HEAD_CLOTH_SET1":{"t":5,"ja":"T5 学徒の頭巾","focus":750.0,"res":[["T5_CLOTH",8]],"value":256,"line":"CLOTH","slot":"HEAD","jaFull":"学徒の頭巾（達人）","en":"Expert's Scholar Cowl"},"T5_HEAD_CLOTH_SET2":{"t":5,"ja":"T5 聖職者の頭巾","focus":750.0,"res":[["T5_CLOTH",8]],"value":256,"line":"CLOTH","slot":"HEAD","jaFull":"聖職者の頭巾（達人）","en":"Expert's Cleric Cowl"},"T5_HEAD_CLOTH_SET3":{"t":5,"ja":"T5 魔法使いの頭巾","focus":750.0,"res":[["T5_CLOTH",8]],"value":256,"line":"CLOTH","slot":"HEAD","jaFull":"魔法使いの頭巾（達人）","en":"Expert's Mage Cowl"},"T5_ARMOR_CLOTH_SET1":{"t":5,"ja":"T5 学徒のローブ","focus":1501.0,"res":[["T5_CLOTH",16]],"value":512,"line":"CLOTH","slot":"ARMOR","jaFull":"学徒のローブ（達人）","en":"Expert's Scholar Robe"},"T5_ARMOR_CLOTH_SET2":{"t":5,"ja":"T5 聖職者のローブ","focus":1501.0,"res":[["T5_CLOTH",16]],"value":512,"line":"CLOTH","slot":"ARMOR","jaFull":"聖職者のローブ（達人）","en":"Expert's Cleric Robe"},"T5_ARMOR_CLOTH_SET3":{"t":5,"ja":"T5 魔法使いのローブ","focus":1501.0,"res":[["T5_CLOTH",16]],"value":512,"line":"CLOTH","slot":"ARMOR","jaFull":"魔法使いのローブ（達人）","en":"Expert's Mage Robe"},"T5_SHOES_CLOTH_SET1":{"t":5,"ja":"T5 学徒のサンダル","focus":750.0,"res":[["T5_CLOTH",8]],"value":256,"line":"CLOTH","slot":"SHOES","jaFull":"学徒のサンダル（達人）","en":"Expert's Scholar Sandals"},"T5_SHOES_CLOTH_SET2":{"t":5,"ja":"T5 聖職者のサンダル","focus":750.0,"res":[["T5_CLOTH",8]],"value":256,"line":"CLOTH","slot":"SHOES","jaFull":"聖職者のサンダル（達人）","en":"Expert's Cleric Sandals"},"T5_SHOES_CLOTH_SET3":{"t":5,"ja":"T5 魔法使いのサンダル","focus":750.0,"res":[["T5_CLOTH",8]],"value":256,"line":"CLOTH","slot":"SHOES","jaFull":"魔法使いのサンダル（達人）","en":"Expert's Mage Sandals"},"T5_BAG":{"t":5,"ja":"T5 袋","focus":1501.0,"res":[["T5_CLOTH",8],["T5_LEATHER",8]],"value":512,"line":"BAG","slot":"BAG","jaFull":"袋（達人）","en":"Expert's Bag"},"T5_CAPE":{"t":5,"ja":"T5 ケープ","focus":750.0,"res":[["T5_CLOTH",4],["T5_LEATHER",4]],"value":256,"line":"CAPE","slot":"CAPE","jaFull":"ケープ（達人）","en":"Expert's Cape"},"T6_HEAD_PLATE_SET1":{"t":6,"ja":"T6 ソルジャーヘルメット","focus":1313.0,"res":[["T6_METALBAR",8]],"value":512,"line":"PLATE","slot":"HEAD","jaFull":"ソルジャーヘルメット（マスター）","en":"Master's Soldier Helmet"},"T6_HEAD_PLATE_SET2":{"t":6,"ja":"T6 騎士のヘルメット","focus":1313.0,"res":[["T6_METALBAR",8]],"value":512,"line":"PLATE","slot":"HEAD","jaFull":"騎士のヘルメット（マスター）","en":"Master's Knight Helmet"},"T6_HEAD_PLATE_SET3":{"t":6,"ja":"T6 ガーディアンヘルメット","focus":1313.0,"res":[["T6_METALBAR",8]],"value":512,"line":"PLATE","slot":"HEAD","jaFull":"ガーディアンヘルメット（マスター）","en":"Master's Guardian Helmet"},"T6_ARMOR_PLATE_SET1":{"t":6,"ja":"T6 ソルジャーアーマー","focus":2626.0,"res":[["T6_METALBAR",16]],"value":1024,"line":"PLATE","slot":"ARMOR","jaFull":"ソルジャーアーマー（マスター）","en":"Master's Soldier Armor"},"T6_ARMOR_PLATE_SET2":{"t":6,"ja":"T6 騎士のアーマー","focus":2626.0,"res":[["T6_METALBAR",16]],"value":1024,"line":"PLATE","slot":"ARMOR","jaFull":"騎士のアーマー（マスター）","en":"Master's Knight Armor"},"T6_ARMOR_PLATE_SET3":{"t":6,"ja":"T6 ガーディアンアーマー","focus":2626.0,"res":[["T6_METALBAR",16]],"value":1024,"line":"PLATE","slot":"ARMOR","jaFull":"ガーディアンアーマー（マスター）","en":"Master's Guardian Armor"},"T6_SHOES_PLATE_SET1":{"t":6,"ja":"T6 ソルジャーブーツ","focus":1313.0,"res":[["T6_METALBAR",8]],"value":512,"line":"PLATE","slot":"SHOES","jaFull":"ソルジャーブーツ（マスター）","en":"Master's Soldier Boots"},"T6_SHOES_PLATE_SET2":{"t":6,"ja":"T6 騎士のブーツ","focus":1313.0,"res":[["T6_METALBAR",8]],"value":512,"line":"PLATE","slot":"SHOES","jaFull":"騎士のブーツ（マスター）","en":"Master's Knight Boots"},"T6_SHOES_PLATE_SET3":{"t":6,"ja":"T6 ガーディアンブーツ","focus":1313.0,"res":[["T6_METALBAR",8]],"value":512,"line":"PLATE","slot":"SHOES","jaFull":"ガーディアンブーツ（マスター）","en":"Master's Guardian Boots"},"T6_HEAD_LEATHER_SET1":{"t":6,"ja":"T6 傭兵フード","focus":1313.0,"res":[["T6_LEATHER",8]],"value":512,"line":"LEATHER","slot":"HEAD","jaFull":"傭兵フード（マスター）","en":"Master's Mercenary Hood"},"T6_HEAD_LEATHER_SET2":{"t":6,"ja":"T6 狩人のフード","focus":1313.0,"res":[["T6_LEATHER",8]],"value":512,"line":"LEATHER","slot":"HEAD","jaFull":"狩人のフード（マスター）","en":"Master's Hunter Hood"},"T6_HEAD_LEATHER_SET3":{"t":6,"ja":"T6 アサシンのフード","focus":1313.0,"res":[["T6_LEATHER",8]],"value":512,"line":"LEATHER","slot":"HEAD","jaFull":"アサシンのフード（マスター）","en":"Master's Assassin Hood"},"T6_ARMOR_LEATHER_SET1":{"t":6,"ja":"T6 傭兵のジャケット","focus":2626.0,"res":[["T6_LEATHER",16]],"value":1024,"line":"LEATHER","slot":"ARMOR","jaFull":"傭兵のジャケット（マスター）","en":"Master's Mercenary Jacket"},"T6_ARMOR_LEATHER_SET2":{"t":6,"ja":"T6 狩人のジャケット","focus":2626.0,"res":[["T6_LEATHER",16]],"value":1024,"line":"LEATHER","slot":"ARMOR","jaFull":"狩人のジャケット（マスター）","en":"Master's Hunter Jacket"},"T6_ARMOR_LEATHER_SET3":{"t":6,"ja":"T6 アサシンジャケット","focus":2626.0,"res":[["T6_LEATHER",16]],"value":1024,"line":"LEATHER","slot":"ARMOR","jaFull":"アサシンジャケット（マスター）","en":"Master's Assassin Jacket"},"T6_SHOES_LEATHER_SET1":{"t":6,"ja":"T6 傭兵の靴","focus":1313.0,"res":[["T6_LEATHER",8]],"value":512,"line":"LEATHER","slot":"SHOES","jaFull":"傭兵の靴（マスター）","en":"Master's Mercenary Shoes"},"T6_SHOES_LEATHER_SET2":{"t":6,"ja":"T6 狩人の靴","focus":1313.0,"res":[["T6_LEATHER",8]],"value":512,"line":"LEATHER","slot":"SHOES","jaFull":"狩人の靴（マスター）","en":"Master's Hunter Shoes"},"T6_SHOES_LEATHER_SET3":{"t":6,"ja":"T6 アサシンの靴","focus":1313.0,"res":[["T6_LEATHER",8]],"value":512,"line":"LEATHER","slot":"SHOES","jaFull":"アサシンの靴（マスター）","en":"Master's Assassin Shoes"},"T6_HEAD_CLOTH_SET1":{"t":6,"ja":"T6 学徒の頭巾","focus":1313.0,"res":[["T6_CLOTH",8]],"value":512,"line":"CLOTH","slot":"HEAD","jaFull":"学徒の頭巾（マスター）","en":"Master's Scholar Cowl"},"T6_HEAD_CLOTH_SET2":{"t":6,"ja":"T6 聖職者の頭巾","focus":1313.0,"res":[["T6_CLOTH",8]],"value":512,"line":"CLOTH","slot":"HEAD","jaFull":"聖職者の頭巾（マスター）","en":"Master's Cleric Cowl"},"T6_HEAD_CLOTH_SET3":{"t":6,"ja":"T6 魔法使いの頭巾","focus":1313.0,"res":[["T6_CLOTH",8]],"value":512,"line":"CLOTH","slot":"HEAD","jaFull":"魔法使いの頭巾（マスター）","en":"Master's Mage Cowl"},"T6_ARMOR_CLOTH_SET1":{"t":6,"ja":"T6 学徒のローブ","focus":2626.0,"res":[["T6_CLOTH",16]],"value":1024,"line":"CLOTH","slot":"ARMOR","jaFull":"学徒のローブ（マスター）","en":"Master's Scholar Robe"},"T6_ARMOR_CLOTH_SET2":{"t":6,"ja":"T6 聖職者のローブ","focus":2626.0,"res":[["T6_CLOTH",16]],"value":1024,"line":"CLOTH","slot":"ARMOR","jaFull":"聖職者のローブ（マスター）","en":"Master's Cleric Robe"},"T6_ARMOR_CLOTH_SET3":{"t":6,"ja":"T6 魔法使いのローブ","focus":2626.0,"res":[["T6_CLOTH",16]],"value":1024,"line":"CLOTH","slot":"ARMOR","jaFull":"魔法使いのローブ（マスター）","en":"Master's Mage Robe"},"T6_SHOES_CLOTH_SET1":{"t":6,"ja":"T6 学徒のサンダル","focus":1313.0,"res":[["T6_CLOTH",8]],"value":512,"line":"CLOTH","slot":"SHOES","jaFull":"学徒のサンダル（マスター）","en":"Master's Scholar Sandals"},"T6_SHOES_CLOTH_SET2":{"t":6,"ja":"T6 聖職者のサンダル","focus":1313.0,"res":[["T6_CLOTH",8]],"value":512,"line":"CLOTH","slot":"SHOES","jaFull":"聖職者のサンダル（マスター）","en":"Master's Cleric Sandals"},"T6_SHOES_CLOTH_SET3":{"t":6,"ja":"T6 魔法使いのサンダル","focus":1313.0,"res":[["T6_CLOTH",8]],"value":512,"line":"CLOTH","slot":"SHOES","jaFull":"魔法使いのサンダル（マスター）","en":"Master's Mage Sandals"},"T6_BAG":{"t":6,"ja":"T6 袋","focus":2626.0,"res":[["T6_CLOTH",8],["T6_LEATHER",8]],"value":1024,"line":"BAG","slot":"BAG","jaFull":"袋（マスター）","en":"Master's Bag"},"T6_CAPE":{"t":6,"ja":"T6 ケープ","focus":1313.0,"res":[["T6_CLOTH",4],["T6_LEATHER",4]],"value":512,"line":"CAPE","slot":"CAPE","jaFull":"ケープ（マスター）","en":"Master's Cape"},"T7_HEAD_PLATE_SET1":{"t":7,"ja":"T7 ソルジャーヘルメット","focus":2298.0,"res":[["T7_METALBAR",8]],"value":1024,"line":"PLATE","slot":"HEAD","jaFull":"ソルジャーヘルメット（グランドマスター）","en":"Grandmaster's Soldier Helmet"},"T7_HEAD_PLATE_SET2":{"t":7,"ja":"T7 騎士のヘルメット","focus":2298.0,"res":[["T7_METALBAR",8]],"value":1024,"line":"PLATE","slot":"HEAD","jaFull":"騎士のヘルメット（グランドマスター）","en":"Grandmaster's Knight Helmet"},"T7_HEAD_PLATE_SET3":{"t":7,"ja":"T7 ガーディアンヘルメット","focus":2298.0,"res":[["T7_METALBAR",8]],"value":1024,"line":"PLATE","slot":"HEAD","jaFull":"ガーディアンヘルメット（グランドマスター）","en":"Grandmaster's Guardian Helmet"},"T7_ARMOR_PLATE_SET1":{"t":7,"ja":"T7 ソルジャーアーマー","focus":4596.0,"res":[["T7_METALBAR",16]],"value":2048,"line":"PLATE","slot":"ARMOR","jaFull":"ソルジャーアーマー（グランドマスター）","en":"Grandmaster's Soldier Armor"},"T7_ARMOR_PLATE_SET2":{"t":7,"ja":"T7 騎士のアーマー","focus":4596.0,"res":[["T7_METALBAR",16]],"value":2048,"line":"PLATE","slot":"ARMOR","jaFull":"騎士のアーマー（グランドマスター）","en":"Grandmaster's Knight Armor"},"T7_ARMOR_PLATE_SET3":{"t":7,"ja":"T7 ガーディアンアーマー","focus":4596.0,"res":[["T7_METALBAR",16]],"value":2048,"line":"PLATE","slot":"ARMOR","jaFull":"ガーディアンアーマー（グランドマスター）","en":"Grandmaster's Guardian Armor"},"T7_SHOES_PLATE_SET1":{"t":7,"ja":"T7 ソルジャーブーツ","focus":2298.0,"res":[["T7_METALBAR",8]],"value":1024,"line":"PLATE","slot":"SHOES","jaFull":"ソルジャーブーツ（グランドマスター）","en":"Grandmaster's Soldier Boots"},"T7_SHOES_PLATE_SET2":{"t":7,"ja":"T7 騎士のブーツ","focus":2298.0,"res":[["T7_METALBAR",8]],"value":1024,"line":"PLATE","slot":"SHOES","jaFull":"騎士のブーツ（グランドマスター）","en":"Grandmaster's Knight Boots"},"T7_SHOES_PLATE_SET3":{"t":7,"ja":"T7 ガーディアンブーツ","focus":2298.0,"res":[["T7_METALBAR",8]],"value":1024,"line":"PLATE","slot":"SHOES","jaFull":"ガーディアンブーツ（グランドマスター）","en":"Grandmaster's Guardian Boots"},"T7_HEAD_LEATHER_SET1":{"t":7,"ja":"T7 傭兵フード","focus":2298.0,"res":[["T7_LEATHER",8]],"value":1024,"line":"LEATHER","slot":"HEAD","jaFull":"傭兵フード（グランドマスター）","en":"Grandmaster's Mercenary Hood"},"T7_HEAD_LEATHER_SET2":{"t":7,"ja":"T7 狩人のフード","focus":2298.0,"res":[["T7_LEATHER",8]],"value":1024,"line":"LEATHER","slot":"HEAD","jaFull":"狩人のフード（グランドマスター）","en":"Grandmaster's Hunter Hood"},"T7_HEAD_LEATHER_SET3":{"t":7,"ja":"T7 アサシンのフード","focus":2298.0,"res":[["T7_LEATHER",8]],"value":1024,"line":"LEATHER","slot":"HEAD","jaFull":"アサシンのフード（グランドマスター）","en":"Grandmaster's Assassin Hood"},"T7_ARMOR_LEATHER_SET1":{"t":7,"ja":"T7 傭兵のジャケット","focus":4596.0,"res":[["T7_LEATHER",16]],"value":2048,"line":"LEATHER","slot":"ARMOR","jaFull":"傭兵のジャケット（グランドマスター）","en":"Grandmaster's Mercenary Jacket"},"T7_ARMOR_LEATHER_SET2":{"t":7,"ja":"T7 狩人のジャケット","focus":4596.0,"res":[["T7_LEATHER",16]],"value":2048,"line":"LEATHER","slot":"ARMOR","jaFull":"狩人のジャケット（グランドマスター）","en":"Grandmaster's Hunter Jacket"},"T7_ARMOR_LEATHER_SET3":{"t":7,"ja":"T7 アサシンジャケット","focus":4596.0,"res":[["T7_LEATHER",16]],"value":2048,"line":"LEATHER","slot":"ARMOR","jaFull":"アサシンジャケット（グランドマスター）","en":"Grandmaster's Assassin Jacket"},"T7_SHOES_LEATHER_SET1":{"t":7,"ja":"T7 傭兵の靴","focus":2298.0,"res":[["T7_LEATHER",8]],"value":1024,"line":"LEATHER","slot":"SHOES","jaFull":"傭兵の靴（グランドマスター）","en":"Grandmaster's Mercenary Shoes"},"T7_SHOES_LEATHER_SET2":{"t":7,"ja":"T7 狩人の靴","focus":2298.0,"res":[["T7_LEATHER",8]],"value":1024,"line":"LEATHER","slot":"SHOES","jaFull":"狩人の靴（グランドマスター）","en":"Grandmaster's Hunter Shoes"},"T7_SHOES_LEATHER_SET3":{"t":7,"ja":"T7 アサシンの靴","focus":2298.0,"res":[["T7_LEATHER",8]],"value":1024,"line":"LEATHER","slot":"SHOES","jaFull":"アサシンの靴（グランドマスター）","en":"Grandmaster's Assassin Shoes"},"T7_HEAD_CLOTH_SET1":{"t":7,"ja":"T7 学徒の頭巾","focus":2298.0,"res":[["T7_CLOTH",8]],"value":1024,"line":"CLOTH","slot":"HEAD","jaFull":"学徒の頭巾（グランドマスター）","en":"Grandmaster's Scholar Cowl"},"T7_HEAD_CLOTH_SET2":{"t":7,"ja":"T7 聖職者の頭巾","focus":2298.0,"res":[["T7_CLOTH",8]],"value":1024,"line":"CLOTH","slot":"HEAD","jaFull":"聖職者の頭巾（グランドマスター）","en":"Grandmaster's Cleric Cowl"},"T7_HEAD_CLOTH_SET3":{"t":7,"ja":"T7 魔法使いの頭巾","focus":2298.0,"res":[["T7_CLOTH",8]],"value":1024,"line":"CLOTH","slot":"HEAD","jaFull":"魔法使いの頭巾（グランドマスター）","en":"Grandmaster's Mage Cowl"},"T7_ARMOR_CLOTH_SET1":{"t":7,"ja":"T7 学徒のローブ","focus":4596.0,"res":[["T7_CLOTH",16]],"value":2048,"line":"CLOTH","slot":"ARMOR","jaFull":"学徒のローブ（グランドマスター）","en":"Grandmaster's Scholar Robe"},"T7_ARMOR_CLOTH_SET2":{"t":7,"ja":"T7 聖職者のローブ","focus":4596.0,"res":[["T7_CLOTH",16]],"value":2048,"line":"CLOTH","slot":"ARMOR","jaFull":"聖職者のローブ（グランドマスター）","en":"Grandmaster's Cleric Robe"},"T7_ARMOR_CLOTH_SET3":{"t":7,"ja":"T7 魔法使いのローブ","focus":4596.0,"res":[["T7_CLOTH",16]],"value":2048,"line":"CLOTH","slot":"ARMOR","jaFull":"魔法使いのローブ（グランドマスター）","en":"Grandmaster's Mage Robe"},"T7_SHOES_CLOTH_SET1":{"t":7,"ja":"T7 学徒のサンダル","focus":2298.0,"res":[["T7_CLOTH",8]],"value":1024,"line":"CLOTH","slot":"SHOES","jaFull":"学徒のサンダル（グランドマスター）","en":"Grandmaster's Scholar Sandals"},"T7_SHOES_CLOTH_SET2":{"t":7,"ja":"T7 聖職者のサンダル","focus":2298.0,"res":[["T7_CLOTH",8]],"value":1024,"line":"CLOTH","slot":"SHOES","jaFull":"聖職者のサンダル（グランドマスター）","en":"Grandmaster's Cleric Sandals"},"T7_SHOES_CLOTH_SET3":{"t":7,"ja":"T7 魔法使いのサンダル","focus":2298.0,"res":[["T7_CLOTH",8]],"value":1024,"line":"CLOTH","slot":"SHOES","jaFull":"魔法使いのサンダル（グランドマスター）","en":"Grandmaster's Mage Sandals"},"T7_BAG":{"t":7,"ja":"T7 袋","focus":4596.0,"res":[["T7_CLOTH",8],["T7_LEATHER",8]],"value":2048,"line":"BAG","slot":"BAG","jaFull":"袋（グランドマスター）","en":"Grandmaster's Bag"},"T7_CAPE":{"t":7,"ja":"T7 ケープ","focus":2298.0,"res":[["T7_CLOTH",4],["T7_LEATHER",4]],"value":1024,"line":"CAPE","slot":"CAPE","jaFull":"ケープ（グランドマスター）","en":"Grandmaster's Cape"},"T8_HEAD_PLATE_SET1":{"t":8,"ja":"T8 ソルジャーヘルメット","focus":4021.0,"res":[["T8_METALBAR",8]],"value":2048,"line":"PLATE","slot":"HEAD","jaFull":"ソルジャーヘルメット（老熟）","en":"Elder's Soldier Helmet"},"T8_HEAD_PLATE_SET2":{"t":8,"ja":"T8 騎士のヘルメット","focus":4021.0,"res":[["T8_METALBAR",8]],"value":2048,"line":"PLATE","slot":"HEAD","jaFull":"騎士のヘルメット（老熟）","en":"Elder's Knight Helmet"},"T8_HEAD_PLATE_SET3":{"t":8,"ja":"T8 ガーディアンヘルメット","focus":4021.0,"res":[["T8_METALBAR",8]],"value":2048,"line":"PLATE","slot":"HEAD","jaFull":"ガーディアンヘルメット（老熟）","en":"Elder's Guardian Helmet"},"T8_ARMOR_PLATE_SET1":{"t":8,"ja":"T8 ソルジャーアーマー","focus":8042.0,"res":[["T8_METALBAR",16]],"value":4096,"line":"PLATE","slot":"ARMOR","jaFull":"ソルジャーアーマー（老熟）","en":"Elder's Soldier Armor"},"T8_ARMOR_PLATE_SET2":{"t":8,"ja":"T8 騎士のアーマー","focus":8042.0,"res":[["T8_METALBAR",16]],"value":4096,"line":"PLATE","slot":"ARMOR","jaFull":"騎士のアーマー（老熟）","en":"Elder's Knight Armor"},"T8_ARMOR_PLATE_SET3":{"t":8,"ja":"T8 ガーディアンアーマー","focus":8042.0,"res":[["T8_METALBAR",16]],"value":4096,"line":"PLATE","slot":"ARMOR","jaFull":"ガーディアンアーマー（老熟）","en":"Elder's Guardian Armor"},"T8_SHOES_PLATE_SET1":{"t":8,"ja":"T8 ソルジャーブーツ","focus":4021.0,"res":[["T8_METALBAR",8]],"value":2048,"line":"PLATE","slot":"SHOES","jaFull":"ソルジャーブーツ（老熟）","en":"Elder's Soldier Boots"},"T8_SHOES_PLATE_SET2":{"t":8,"ja":"T8 騎士のブーツ","focus":4021.0,"res":[["T8_METALBAR",8]],"value":2048,"line":"PLATE","slot":"SHOES","jaFull":"騎士のブーツ（老熟）","en":"Elder's Knight Boots"},"T8_SHOES_PLATE_SET3":{"t":8,"ja":"T8 ガーディアンブーツ","focus":4021.0,"res":[["T8_METALBAR",8]],"value":2048,"line":"PLATE","slot":"SHOES","jaFull":"ガーディアンブーツ（老熟）","en":"Elder's Guardian Boots"},"T8_HEAD_LEATHER_SET1":{"t":8,"ja":"T8 傭兵のフード","focus":4021.0,"res":[["T8_LEATHER",8]],"value":2048,"line":"LEATHER","slot":"HEAD","jaFull":"傭兵のフード（老熟）","en":"Elder's Mercenary Hood"},"T8_HEAD_LEATHER_SET2":{"t":8,"ja":"T8 狩人のフード","focus":4021.0,"res":[["T8_LEATHER",8]],"value":2048,"line":"LEATHER","slot":"HEAD","jaFull":"狩人のフード（老熟）","en":"Elder's Hunter Hood"},"T8_HEAD_LEATHER_SET3":{"t":8,"ja":"T8 アサシンのフード","focus":4021.0,"res":[["T8_LEATHER",8]],"value":2048,"line":"LEATHER","slot":"HEAD","jaFull":"アサシンのフード（老熟）","en":"Elder's Assassin Hood"},"T8_ARMOR_LEATHER_SET1":{"t":8,"ja":"T8 傭兵のジャケット","focus":8042.0,"res":[["T8_LEATHER",16]],"value":4096,"line":"LEATHER","slot":"ARMOR","jaFull":"傭兵のジャケット（老熟）","en":"Elder's Mercenary Jacket"},"T8_ARMOR_LEATHER_SET2":{"t":8,"ja":"T8 狩人のジャケット","focus":8042.0,"res":[["T8_LEATHER",16]],"value":4096,"line":"LEATHER","slot":"ARMOR","jaFull":"狩人のジャケット（老熟）","en":"Elder's Hunter Jacket"},"T8_ARMOR_LEATHER_SET3":{"t":8,"ja":"T8 アサシンジャケット","focus":8042.0,"res":[["T8_LEATHER",16]],"value":4096,"line":"LEATHER","slot":"ARMOR","jaFull":"アサシンジャケット（老熟）","en":"Elder's Assassin Jacket"},"T8_SHOES_LEATHER_SET1":{"t":8,"ja":"T8 傭兵の靴","focus":4021.0,"res":[["T8_LEATHER",8]],"value":2048,"line":"LEATHER","slot":"SHOES","jaFull":"傭兵の靴（老熟）","en":"Elder's Mercenary Shoes"},"T8_SHOES_LEATHER_SET2":{"t":8,"ja":"T8 狩人の靴","focus":4021.0,"res":[["T8_LEATHER",8]],"value":2048,"line":"LEATHER","slot":"SHOES","jaFull":"狩人の靴（老熟）","en":"Elder's Hunter Shoes"},"T8_SHOES_LEATHER_SET3":{"t":8,"ja":"T8 アサシンの靴","focus":4021.0,"res":[["T8_LEATHER",8]],"value":2048,"line":"LEATHER","slot":"SHOES","jaFull":"アサシンの靴（老熟）","en":"Elder's Assassin Shoes"},"T8_HEAD_CLOTH_SET1":{"t":8,"ja":"T8 学徒の頭巾","focus":4021.0,"res":[["T8_CLOTH",8]],"value":2048,"line":"CLOTH","slot":"HEAD","jaFull":"学徒の頭巾（老熟）","en":"Elder's Scholar Cowl"},"T8_HEAD_CLOTH_SET2":{"t":8,"ja":"T8 聖職者の頭巾","focus":4021.0,"res":[["T8_CLOTH",8]],"value":2048,"line":"CLOTH","slot":"HEAD","jaFull":"聖職者の頭巾（老熟）","en":"Elder's Cleric Cowl"},"T8_HEAD_CLOTH_SET3":{"t":8,"ja":"T8 魔法使いの頭巾","focus":4021.0,"res":[["T8_CLOTH",8]],"value":2048,"line":"CLOTH","slot":"HEAD","jaFull":"魔法使いの頭巾（老熟）","en":"Elder's Mage Cowl"},"T8_ARMOR_CLOTH_SET1":{"t":8,"ja":"T8 学徒のローブ","focus":8042.0,"res":[["T8_CLOTH",16]],"value":4096,"line":"CLOTH","slot":"ARMOR","jaFull":"学徒のローブ（老熟）","en":"Elder's Scholar Robe"},"T8_ARMOR_CLOTH_SET2":{"t":8,"ja":"T8 聖職者のローブ","focus":8042.0,"res":[["T8_CLOTH",16]],"value":4096,"line":"CLOTH","slot":"ARMOR","jaFull":"聖職者のローブ（老熟）","en":"Elder's Cleric Robe"},"T8_ARMOR_CLOTH_SET3":{"t":8,"ja":"T8 魔法使いのローブ","focus":8042.0,"res":[["T8_CLOTH",16]],"value":4096,"line":"CLOTH","slot":"ARMOR","jaFull":"魔法使いのローブ（老熟）","en":"Elder's Mage Robe"},"T8_SHOES_CLOTH_SET1":{"t":8,"ja":"T8 学徒のサンダル","focus":4021.0,"res":[["T8_CLOTH",8]],"value":2048,"line":"CLOTH","slot":"SHOES","jaFull":"学徒のサンダル（老熟）","en":"Elder's Scholar Sandals"},"T8_SHOES_CLOTH_SET2":{"t":8,"ja":"T8 聖職者のサンダル","focus":4021.0,"res":[["T8_CLOTH",8]],"value":2048,"line":"CLOTH","slot":"SHOES","jaFull":"聖職者のサンダル（老熟）","en":"Elder's Cleric Sandals"},"T8_SHOES_CLOTH_SET3":{"t":8,"ja":"T8 魔法使いのサンダル","focus":4021.0,"res":[["T8_CLOTH",8]],"value":2048,"line":"CLOTH","slot":"SHOES","jaFull":"魔法使いのサンダル（老熟）","en":"Elder's Mage Sandals"},"T8_BAG":{"t":8,"ja":"T8 袋","focus":8042.0,"res":[["T8_CLOTH",8],["T8_LEATHER",8]],"value":4096,"line":"BAG","slot":"BAG","jaFull":"袋（老熟）","en":"Elder's Bag"},"T8_CAPE":{"t":8,"ja":"T8 ケープ","focus":4021.0,"res":[["T8_CLOTH",4],["T8_LEATHER",4]],"value":2048,"line":"CAPE","slot":"CAPE","jaFull":"ケープ（老熟）","en":"Elder's Cape"}},"mat":{"T4_CLOTH":{"Caerleon":[550,9.8],"Lymhurst":[337,7.4],"Martlock":[362,19.4]},"T4_LEATHER":{"Caerleon":[622,9.8],"Lymhurst":[352,12.1],"Martlock":[355,8.8],"Brecilien":[419,1.1]},"T4_METALBAR":{"Caerleon":[617,0.2],"Thetford":[353,9.5],"Lymhurst":[482,7.4],"Bridgewatch":[395,2.9],"Brecilien":[749,2.0]},"T5_CLOTH":{"Caerleon":[1699,9.8],"Lymhurst":[1287,3.1],"Martlock":[1206,19.4],"Bridgewatch":[1149,1.7]},"T5_LEATHER":{"Caerleon":[2281,9.8],"Thetford":[1613,9.5],"Martlock":[1579,9.0],"Fort Sterling":[1695,14.3],"Brecilien":[1786,1.4]},"T5_METALBAR":{"Caerleon":[1525,9.8],"Thetford":[1140,9.5],"Bridgewatch":[1173,2.2]},"T6_CLOTH":{"Caerleon":[3700,0.6],"Lymhurst":[3068,7.3],"Martlock":[3188,12.5]},"T6_LEATHER":{"Caerleon":[6343,9.8],"Lymhurst":[5395,7.3],"Martlock":[5398,9.0],"Brecilien":[5396,1.1]},"T6_METALBAR":{"Caerleon":[3246,9.8],"Thetford":[2842,9.5],"Lymhurst":[2890,7.3],"Bridgewatch":[2973,2.9]},"T7_CLOTH":{"Caerleon":[11986,9.8],"Lymhurst":[8909,7.3],"Martlock":[10061,12.5],"Bridgewatch":[9218,4.1]},"T7_LEATHER":{"Lymhurst":[16420,7.3],"Brecilien":[16997,1.1]},"T7_METALBAR":{"Caerleon":[8819,9.8],"Lymhurst":[7992,7.3]},"T8_CLOTH":{"Caerleon":[41990,9.8],"Lymhurst":[25103,7.3]},"T8_LEATHER":{"Caerleon":[44996,9.8],"Lymhurst":[38499,7.3]},"T8_METALBAR":{"Caerleon":[30978,9.8],"Lymhurst":[27981,7.3]}},"bm":{"T4_HEAD_PLATE_SET1":{"instant":1896,"listed":2656,"realized":2710,"vol":898.4,"age":9.7},"T4_HEAD_PLATE_SET2":{"instant":3081,"listed":0,"realized":3202,"vol":727.0,"age":9.7},"T4_HEAD_PLATE_SET3":{"instant":2686,"listed":2761,"realized":3099,"vol":1098.0,"age":9.7},"T4_ARMOR_PLATE_SET1":{"instant":5056,"listed":0,"realized":5609,"vol":1401.1,"age":9.7},"T4_ARMOR_PLATE_SET2":{"instant":5688,"listed":0,"realized":6005,"vol":1243.9,"age":9.7},"T4_ARMOR_PLATE_SET3":{"instant":4898,"listed":0,"realized":5971,"vol":1171.4,"age":9.7},"T4_SHOES_PLATE_SET1":{"instant":3002,"listed":0,"realized":3024,"vol":1115.1,"age":9.7},"T4_SHOES_PLATE_SET2":{"instant":3002,"listed":0,"realized":3007,"vol":951.9,"age":9.7},"T4_SHOES_PLATE_SET3":{"instant":1106,"listed":3050,"realized":3039,"vol":693.9,"age":0.1},"T4_HEAD_LEATHER_SET1":{"instant":3160,"listed":0,"realized":3841,"vol":625.9,"age":9.7},"T4_HEAD_LEATHER_SET2":{"instant":2054,"listed":0,"realized":3678,"vol":676.4,"age":9.7},"T4_HEAD_LEATHER_SET3":{"instant":2054,"listed":0,"realized":3864,"vol":809.9,"age":9.7},"T4_ARMOR_LEATHER_SET1":{"instant":5214,"listed":0,"realized":4820,"vol":1221.4,"age":9.7},"T4_ARMOR_LEATHER_SET2":{"instant":5688,"listed":0,"realized":5691,"vol":857.4,"age":9.7},"T4_ARMOR_LEATHER_SET3":{"instant":790,"listed":0,"realized":4980,"vol":1278.0,"age":9.7},"T4_SHOES_LEATHER_SET1":{"instant":2686,"listed":0,"realized":3731,"vol":627.1,"age":9.7},"T4_SHOES_LEATHER_SET2":{"instant":2212,"listed":0,"realized":3485,"vol":996.6,"age":9.7},"T4_SHOES_LEATHER_SET3":{"instant":1027,"listed":2192,"realized":2533,"vol":1287.1,"age":0.1},"T4_HEAD_CLOTH_SET1":{"instant":3081,"listed":0,"realized":4241,"vol":559.7,"age":9.7},"T4_HEAD_CLOTH_SET2":{"instant":4029,"listed":0,"realized":5698,"vol":481.7,"age":9.7},"T4_HEAD_CLOTH_SET3":{"instant":2054,"listed":0,"realized":3829,"vol":739.7,"age":9.7},"T4_ARMOR_CLOTH_SET1":{"instant":6478,"listed":6528,"realized":6346,"vol":1061.4,"age":9.7},"T4_ARMOR_CLOTH_SET2":{"instant":7110,"listed":0,"realized":6307,"vol":760.0,"age":9.7},"T4_ARMOR_CLOTH_SET3":{"instant":6004,"listed":7894,"realized":8593,"vol":704.7,"age":9.7},"T4_SHOES_CLOTH_SET1":{"instant":3239,"listed":0,"realized":3869,"vol":736.0,"age":9.7},"T4_SHOES_CLOTH_SET2":{"instant":1817,"listed":0,"realized":3107,"vol":527.0,"age":9.7},"T4_SHOES_CLOTH_SET3":{"instant":1896,"listed":0,"realized":3168,"vol":624.0,"age":9.7},"T4_BAG":{"instant":3002,"listed":5256,"realized":5255,"vol":1786.9,"age":9.7},"T4_CAPE":{"instant":1185,"listed":0,"realized":2906,"vol":1736.9,"age":9.7},"T5_HEAD_PLATE_SET1":{"instant":5530,"listed":8678,"realized":10630,"vol":682.1,"age":10.1},"T5_HEAD_PLATE_SET2":{"instant":0,"listed":0,"realized":11209,"vol":595.6,"age":null},"T5_HEAD_PLATE_SET3":{"instant":6478,"listed":7387,"realized":9160,"vol":739.0,"age":10.1},"T5_ARMOR_PLATE_SET1":{"instant":0,"listed":0,"realized":15649,"vol":935.7,"age":null},"T5_ARMOR_PLATE_SET2":{"instant":0,"listed":0,"realized":16092,"vol":952.3,"age":null},"T5_ARMOR_PLATE_SET3":{"instant":0,"listed":0,"realized":16600,"vol":857.7,"age":null},"T5_SHOES_PLATE_SET1":{"instant":0,"listed":0,"realized":11309,"vol":554.3,"age":null},"T5_SHOES_PLATE_SET2":{"instant":0,"listed":0,"realized":9752,"vol":710.6,"age":null},"T5_SHOES_PLATE_SET3":{"instant":0,"listed":0,"realized":9728,"vol":665.6,"age":null},"T5_HEAD_LEATHER_SET1":{"instant":0,"listed":0,"realized":11896,"vol":366.6,"age":null},"T5_HEAD_LEATHER_SET2":{"instant":0,"listed":0,"realized":13713,"vol":439.4,"age":null},"T5_HEAD_LEATHER_SET3":{"instant":0,"listed":0,"realized":13149,"vol":542.6,"age":null},"T5_ARMOR_LEATHER_SET1":{"instant":0,"listed":0,"realized":23369,"vol":628.6,"age":null},"T5_ARMOR_LEATHER_SET2":{"instant":23700,"listed":0,"realized":23721,"vol":499.3,"age":7.4},"T5_ARMOR_LEATHER_SET3":{"instant":23384,"listed":0,"realized":22878,"vol":715.1,"age":7.4},"T5_SHOES_LEATHER_SET1":{"instant":0,"listed":0,"realized":11637,"vol":397.9,"age":null},"T5_SHOES_LEATHER_SET2":{"instant":0,"listed":0,"realized":11181,"vol":514.6,"age":null},"T5_SHOES_LEATHER_SET3":{"instant":0,"listed":0,"realized":11582,"vol":535.0,"age":null},"T5_HEAD_CLOTH_SET1":{"instant":0,"listed":0,"realized":12105,"vol":335.6,"age":null},"T5_HEAD_CLOTH_SET2":{"instant":0,"listed":0,"realized":10476,"vol":502.6,"age":null},"T5_HEAD_CLOTH_SET3":{"instant":0,"listed":0,"realized":9325,"vol":466.9,"age":null},"T5_ARMOR_CLOTH_SET1":{"instant":21488,"listed":22789,"realized":21158,"vol":673.0,"age":10.1},"T5_ARMOR_CLOTH_SET2":{"instant":21488,"listed":0,"realized":17081,"vol":569.0,"age":7.4},"T5_ARMOR_CLOTH_SET3":{"instant":20224,"listed":0,"realized":18634,"vol":539.1,"age":7.4},"T5_SHOES_CLOTH_SET1":{"instant":0,"listed":0,"realized":11970,"vol":466.4,"age":null},"T5_SHOES_CLOTH_SET2":{"instant":0,"listed":0,"realized":9814,"vol":503.7,"age":null},"T5_SHOES_CLOTH_SET3":{"instant":0,"listed":0,"realized":7984,"vol":491.0,"age":null},"T5_BAG":{"instant":15484,"listed":17679,"realized":19814,"vol":2916.1,"age":10.0},"T5_CAPE":{"instant":0,"listed":0,"realized":9663,"vol":813.7,"age":null},"T6_HEAD_PLATE_SET1":{"instant":2844,"listed":17393,"realized":19663,"vol":574.0,"age":10.1},"T6_HEAD_PLATE_SET2":{"instant":0,"listed":0,"realized":20429,"vol":691.1,"age":null},"T6_HEAD_PLATE_SET3":{"instant":17696,"listed":18240,"realized":19805,"vol":554.4,"age":10.1},"T6_ARMOR_PLATE_SET1":{"instant":0,"listed":0,"realized":29942,"vol":1009.1,"age":null},"T6_ARMOR_PLATE_SET2":{"instant":0,"listed":0,"realized":30813,"vol":827.6,"age":null},"T6_ARMOR_PLATE_SET3":{"instant":0,"listed":0,"realized":31164,"vol":897.0,"age":null},"T6_SHOES_PLATE_SET1":{"instant":0,"listed":0,"realized":19098,"vol":476.9,"age":null},"T6_SHOES_PLATE_SET2":{"instant":0,"listed":0,"realized":18957,"vol":569.1,"age":null},"T6_SHOES_PLATE_SET3":{"instant":0,"listed":0,"realized":17837,"vol":565.9,"age":null},"T6_HEAD_LEATHER_SET1":{"instant":0,"listed":0,"realized":33250,"vol":329.0,"age":null},"T6_HEAD_LEATHER_SET2":{"instant":0,"listed":0,"realized":31520,"vol":313.4,"age":null},"T6_HEAD_LEATHER_SET3":{"instant":0,"listed":0,"realized":36696,"vol":280.0,"age":null},"T6_ARMOR_LEATHER_SET1":{"instant":52539,"listed":0,"realized":57574,"vol":458.6,"age":7.4},"T6_ARMOR_LEATHER_SET2":{"instant":52539,"listed":0,"realized":52374,"vol":434.0,"age":7.4},"T6_ARMOR_LEATHER_SET3":{"instant":51273,"listed":0,"realized":57831,"vol":237.5,"age":7.4},"T6_SHOES_LEATHER_SET1":{"instant":0,"listed":0,"realized":34171,"vol":269.1,"age":null},"T6_SHOES_LEATHER_SET2":{"instant":0,"listed":0,"realized":29786,"vol":378.0,"age":null},"T6_SHOES_LEATHER_SET3":{"instant":0,"listed":0,"realized":32518,"vol":346.4,"age":null},"T6_HEAD_CLOTH_SET1":{"instant":23068,"listed":0,"realized":21793,"vol":403.3,"age":0.6},"T6_HEAD_CLOTH_SET2":{"instant":0,"listed":0,"realized":20210,"vol":403.7,"age":null},"T6_HEAD_CLOTH_SET3":{"instant":23700,"listed":0,"realized":20343,"vol":453.3,"age":0.6},"T6_ARMOR_CLOTH_SET1":{"instant":31650,"listed":32400,"realized":32742,"vol":733.1,"age":10.1},"T6_ARMOR_CLOTH_SET2":{"instant":0,"listed":0,"realized":35978,"vol":467.1,"age":null},"T6_ARMOR_CLOTH_SET3":{"instant":0,"listed":0,"realized":34038,"vol":593.0,"age":null},"T6_SHOES_CLOTH_SET1":{"instant":20856,"listed":25677,"realized":28089,"vol":314.1,"age":10.1},"T6_SHOES_CLOTH_SET2":{"instant":0,"listed":0,"realized":20090,"vol":374.1,"age":null},"T6_SHOES_CLOTH_SET3":{"instant":0,"listed":0,"realized":23419,"vol":478.9,"age":null},"T6_BAG":{"instant":42411,"listed":43067,"realized":46610,"vol":2415.9,"age":7.4},"T6_CAPE":{"instant":0,"listed":0,"realized":24318,"vol":1695.4,"age":null},"T7_HEAD_PLATE_SET1":{"instant":0,"listed":0,"realized":62862,"vol":109.9,"age":null},"T7_HEAD_PLATE_SET2":{"instant":0,"listed":0,"realized":55477,"vol":181.1,"age":null},"T7_HEAD_PLATE_SET3":{"instant":0,"listed":0,"realized":56942,"vol":120.6,"age":null},"T7_ARMOR_PLATE_SET1":{"instant":0,"listed":0,"realized":93462,"vol":218.9,"age":null},"T7_ARMOR_PLATE_SET2":{"instant":0,"listed":0,"realized":90369,"vol":219.3,"age":null},"T7_ARMOR_PLATE_SET3":{"instant":91080,"listed":0,"realized":90827,"vol":222.3,"age":7.4},"T7_SHOES_PLATE_SET1":{"instant":0,"listed":0,"realized":47283,"vol":146.7,"age":null},"T7_SHOES_PLATE_SET2":{"instant":0,"listed":0,"realized":60331,"vol":160.4,"age":null},"T7_SHOES_PLATE_SET3":{"instant":0,"listed":0,"realized":52297,"vol":178.4,"age":null},"T7_HEAD_LEATHER_SET1":{"instant":0,"listed":0,"realized":98275,"vol":49.2,"age":null},"T7_HEAD_LEATHER_SET2":{"instant":120270,"listed":0,"realized":107006,"vol":68.6,"age":7.4},"T7_HEAD_LEATHER_SET3":{"instant":119004,"listed":0,"realized":102047,"vol":36.9,"age":7.4},"T7_ARMOR_LEATHER_SET1":{"instant":0,"listed":0,"realized":182136,"vol":90.9,"age":null},"T7_ARMOR_LEATHER_SET2":{"instant":164450,"listed":0,"realized":157549,"vol":79.8,"age":7.4},"T7_ARMOR_LEATHER_SET3":{"instant":168245,"listed":0,"realized":170372,"vol":76.9,"age":7.4},"T7_SHOES_LEATHER_SET1":{"instant":99381,"listed":0,"realized":139495,"vol":37.6,"age":7.4},"T7_SHOES_LEATHER_SET2":{"instant":0,"listed":0,"realized":109245,"vol":80.9,"age":null},"T7_SHOES_LEATHER_SET3":{"instant":96216,"listed":0,"realized":100349,"vol":73.6,"age":7.4},"T7_HEAD_CLOTH_SET1":{"instant":0,"listed":0,"realized":55513,"vol":141.6,"age":null},"T7_HEAD_CLOTH_SET2":{"instant":0,"listed":0,"realized":47183,"vol":130.7,"age":null},"T7_HEAD_CLOTH_SET3":{"instant":0,"listed":0,"realized":58362,"vol":145.4,"age":null},"T7_ARMOR_CLOTH_SET1":{"instant":70840,"listed":89864,"realized":87829,"vol":223.0,"age":10.0},"T7_ARMOR_CLOTH_SET2":{"instant":118910,"listed":0,"realized":92305,"vol":123.9,"age":7.4},"T7_ARMOR_CLOTH_SET3":{"instant":93610,"listed":99871,"realized":114597,"vol":176.0,"age":7.4},"T7_SHOES_CLOTH_SET1":{"instant":0,"listed":0,"realized":64464,"vol":108.1,"age":null},"T7_SHOES_CLOTH_SET2":{"instant":0,"listed":0,"realized":68062,"vol":100.0,"age":null},"T7_SHOES_CLOTH_SET3":{"instant":0,"listed":0,"realized":64163,"vol":104.3,"age":null},"T7_BAG":{"instant":120175,"listed":0,"realized":136783,"vol":740.9,"age":7.4},"T7_CAPE":{"instant":0,"listed":0,"realized":71076,"vol":421.9,"age":null},"T8_HEAD_PLATE_SET1":{"instant":0,"listed":0,"realized":162136,"vol":12.0,"age":null},"T8_HEAD_PLATE_SET2":{"instant":0,"listed":0,"realized":154730,"vol":17.9,"age":null},"T8_HEAD_PLATE_SET3":{"instant":0,"listed":0,"realized":155803,"vol":11.9,"age":null},"T8_ARMOR_PLATE_SET1":{"instant":0,"listed":0,"realized":285756,"vol":20.6,"age":null},"T8_ARMOR_PLATE_SET2":{"instant":0,"listed":0,"realized":286285,"vol":16.9,"age":null},"T8_ARMOR_PLATE_SET3":{"instant":0,"listed":0,"realized":294569,"vol":24.3,"age":null},"T8_SHOES_PLATE_SET1":{"instant":0,"listed":0,"realized":129927,"vol":22.3,"age":null},"T8_SHOES_PLATE_SET2":{"instant":0,"listed":0,"realized":124515,"vol":20.6,"age":null},"T8_SHOES_PLATE_SET3":{"instant":0,"listed":0,"realized":124925,"vol":17.3,"age":null},"T8_HEAD_LEATHER_SET1":{"instant":0,"listed":0,"realized":162720,"vol":14.9,"age":null},"T8_HEAD_LEATHER_SET2":{"instant":0,"listed":0,"realized":156813,"vol":14.9,"age":null},"T8_HEAD_LEATHER_SET3":{"instant":0,"listed":0,"realized":180402,"vol":12.0,"age":null},"T8_ARMOR_LEATHER_SET1":{"instant":0,"listed":0,"realized":383519,"vol":10.3,"age":null},"T8_ARMOR_LEATHER_SET2":{"instant":0,"listed":0,"realized":380878,"vol":9.2,"age":null},"T8_ARMOR_LEATHER_SET3":{"instant":0,"listed":0,"realized":417738,"vol":10.4,"age":null},"T8_SHOES_LEATHER_SET1":{"instant":0,"listed":0,"realized":185452,"vol":7.1,"age":null},"T8_SHOES_LEATHER_SET2":{"instant":0,"listed":0,"realized":194974,"vol":11.3,"age":null},"T8_SHOES_LEATHER_SET3":{"instant":0,"listed":0,"realized":195028,"vol":12.0,"age":null},"T8_HEAD_CLOTH_SET1":{"instant":0,"listed":0,"realized":141430,"vol":10.9,"age":null},"T8_HEAD_CLOTH_SET2":{"instant":0,"listed":0,"realized":167547,"vol":12.6,"age":null},"T8_HEAD_CLOTH_SET3":{"instant":0,"listed":0,"realized":140514,"vol":16.5,"age":null},"T8_ARMOR_CLOTH_SET1":{"instant":0,"listed":0,"realized":279362,"vol":14.3,"age":null},"T8_ARMOR_CLOTH_SET2":{"instant":0,"listed":0,"realized":281641,"vol":12.7,"age":null},"T8_ARMOR_CLOTH_SET3":{"instant":0,"listed":0,"realized":289233,"vol":25.6,"age":null},"T8_SHOES_CLOTH_SET1":{"instant":0,"listed":0,"realized":153292,"vol":12.3,"age":null},"T8_SHOES_CLOTH_SET2":{"instant":0,"listed":0,"realized":154610,"vol":12.0,"age":null},"T8_SHOES_CLOTH_SET3":{"instant":0,"listed":0,"realized":153552,"vol":19.3,"age":null},"T8_BAG":{"instant":0,"listed":0,"realized":320124,"vol":52.1,"age":null},"T8_CAPE":{"instant":0,"listed":0,"realized":147229,"vol":37.4,"age":null}},"matja":{"T5_CLOTH":["T5 華美な布","華美な布","Ornate Cloth"],"T4_CLOTH":["T4 上質な布","上質な布","Fine Cloth"],"T8_METALBAR":["T8 アダマンチウム鋼の延べ棒","アダマンチウム鋼の延べ棒","Adamantium Steel Bar"],"T6_LEATHER":["T6 硬化した革","硬化した革","Hardened Leather"],"T7_METALBAR":["T7 メテオライト鋼の延べ棒","メテオライト鋼の延べ棒","Meteorite Steel Bar"],"T5_LEATHER":["T5 保存された革","保存された革","Cured Leather"],"T6_METALBAR":["T6 ルナイト鋼の延べ棒","ルナイト鋼の延べ棒","Runite Steel Bar"],"T8_CLOTH":["T8 バロック布","バロック布","Baroque Cloth"],"T4_LEATHER":["T4 加工済みの革","加工済みの革","Worked Leather"],"T7_CLOTH":["T7 豪勢な布","豪勢な布","Opulent Cloth"],"T7_LEATHER":["T7 補強革","補強革","Reinforced Leather"],"T4_METALBAR":["T4 鋼の延べ棒","鋼の延べ棒","Steel Bar"],"T8_LEATHER":["T8 強化革","強化革","Fortified Leather"],"T6_CLOTH":["T6 贅沢な布","贅沢な布","Lavish Cloth"],"T5_METALBAR":["T5 チタン鋼の延べ棒","チタン鋼の延べ棒","Titanium Steel Bar"]}};
+/* 闇市クラフト採算表
+   静的データ: レシピ・アイテム価値・フォーカス消費（ao-bin-dumps の items.xml から生成）
+   価格データ: Albion Online Data Project の公開 API をこのページから直接取得（CORS 全開）。
+               取得できない時は内蔵スナップショットで動く。 */
+const CITIES=["Caerleon","Thetford","Lymhurst","Martlock","Fort Sterling","Bridgewatch","Brecilien"];
+const CITY_PARAM="Caerleon,Thetford,Lymhurst,Martlock,FortSterling,Bridgewatch,Brecilien";
+const BONUS={PLATE:{HEAD:"Fort Sterling",ARMOR:"Bridgewatch",SHOES:"Martlock"},
+             LEATHER:{HEAD:"Lymhurst",ARMOR:"Thetford",SHOES:"Martlock"},
+             CLOTH:{HEAD:"Thetford",ARMOR:"Fort Sterling",SHOES:"Bridgewatch"}};
+const $=id=>document.getElementById(id);
+const ITEM_IDS=Object.keys(DB.items);
+const MAT_IDS=[...new Set(Object.values(DB.items).flatMap(i=>i.res.map(r=>r[0])))]
+  .sort((a,b)=>a[1]-b[1]||a.localeCompare(b));
+let MAT=DB.mat, BM=DB.bm, dataLabel="内蔵スナップショット "+DB.generated;
+let matPrice={}, selected=null;
+
+$('stamp').innerHTML='Albion Data Project / 品質1<br>'+ITEM_IDS.length+' 品・素材 '+MAT_IDS.length+' 種<br>'
+  +'レシピは items.xml 由来';
+
+/* ---------- 価格の取得 ---------- */
+const chunk=(a,n)=>{const o=[];for(let i=0;i<a.length;i+=n)o.push(a.slice(i,i+n));return o;};
+async function getJSON(u){
+  const r=await fetch(u,{headers:{Accept:"application/json"}});
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  return r.json();
+}
+function hoursAgo(s){
+  if(!s||s.startsWith("0001")) return null;
+  const t=Date.parse(s.endsWith("Z")?s:s+"Z");
+  if(isNaN(t)) return null;
+  return Math.max(0,Math.round((Date.now()-t)/36e5*10)/10);
+}
+function status(msg,cls){ const e=$('status'); e.textContent=msg; e.className='status'+(cls?' '+cls:''); }
+
+async function refresh(){
+  const base="https://"+$('server').value+".albion-online-data.com/api/v2/stats";
+  $('reload').disabled=true;
+  status("価格を取得中… (0/3)");
+  try{
+    const matRows=(await Promise.all(chunk(MAT_IDS,25).map(c=>
+      getJSON(base+"/prices/"+c.join(",")+"?locations="+CITY_PARAM+"&qualities=1")))).flat();
+    status("価格を取得中… (1/3 闇市の板)");
+    const bmRows=(await Promise.all(chunk(ITEM_IDS,25).map(c=>
+      getJSON(base+"/prices/"+c.join(",")+"?locations=BlackMarket&qualities=1")))).flat();
+    status("価格を取得中… (2/3 闇市の約定履歴)");
+    const hRows=(await Promise.all(chunk(ITEM_IDS,25).map(c=>
+      getJSON(base+"/history/"+c.join(",")+"?locations=BlackMarket&qualities=1&time-scale=24")))).flat();
+
+    const mat={};
+    matRows.forEach(r=>{
+      if(!r.sell_price_min) return;
+      const a=hoursAgo(r.sell_price_min_date);
+      if(a===null||a>72) return;
+      (mat[r.item_id]=mat[r.item_id]||{})[r.city]=[r.sell_price_min,a];
+    });
+    const bm={};
+    bmRows.forEach(r=>{ bm[r.item_id]={instant:r.buy_price_max||0, listed:r.sell_price_min||0,
+                                       realized:0, vol:0, age:hoursAgo(r.buy_price_max_date)}; });
+    hRows.forEach(r=>{
+      const d=(r.data||[]).slice(-7);
+      const tot=d.reduce((s,x)=>s+x.item_count,0);
+      const o=bm[r.item_id]=bm[r.item_id]||{instant:0,listed:0,realized:0,vol:0,age:null};
+      o.vol=Math.round(tot/Math.max(d.length,1)*10)/10;
+      o.realized=tot?Math.round(d.reduce((s,x)=>s+x.avg_price*x.item_count,0)/tot):0;
+    });
+    if(Object.keys(mat).length<3) throw new Error("素材の価格が空だった");
+    MAT=mat; BM=bm;
+    const now=new Date();
+    dataLabel="取得 "+now.toLocaleString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})
+      +" / "+$('server').selectedOptions[0].textContent;
+    status(dataLabel+"（Albion Data から直接）","good");
+  }catch(e){
+    status("取得できず: "+e.message+" — "+DB.generated+" の内蔵データで表示中。素材の値段は手入力できる。","bad");
+  }
+  $('reload').disabled=false;
+  loadMats(); render();
+}
+
+/* ---------- 計算 ---------- */
+function matJa(id){return (DB.matja[id]||[id])[0];}   // 例: T4 鋼の延べ棒（公式の日本語名）
+function priceFor(mid,mode){
+  const row=MAT[mid]||{};
+  if(mode==='cae') return row['Caerleon']||null;
+  let best=null;
+  for(const c of CITIES){ if(c==='Caerleon') continue; const v=row[c]; if(v&&(!best||v[0]<best[0])) best=v; }
+  return best;
+}
+function loadMats(){
+  const mode=$('src').value;
+  if(mode!=='manual') MAT_IDS.forEach(m=>{const p=priceFor(m,mode); matPrice[m]=p?p[0]:0;});
+  const box=$('mats'); box.innerHTML='';
+  MAT_IDS.forEach(m=>{
+    const p=priceFor(m,mode==='manual'?'cae':mode);
+    const l=document.createElement('label'); l.className='m';
+    l.innerHTML='<span>'+matJa(m)+' <span class="age">'+(p?'('+p[1]+'h)':'(データなし)')+'</span></span>';
+    const i=document.createElement('input');
+    i.type='number'; i.min='0'; i.step='1'; i.value=matPrice[m]||0;
+    i.setAttribute('aria-label',matJa(m)+' の1個あたりの値段');
+    i.addEventListener('input',()=>{matPrice[m]=+i.value||0; render();});
+    l.appendChild(i); box.appendChild(l);
+  });
+}
+function returnRate(){
+  const city=$('city').checked, foc=$('focus').checked;
+  let r=city?(foc?0.539:0.367):(foc?0.435:0.152);
+  if(city&&$('daily').checked) r*=1.1;
+  return r;
+}
+function calc(id,rrrOverride){
+  const it=DB.items[id], bm=BM[id]||{};
+  const tax=(+$('tax').value||0)/100, setup=(+$('setup').value||0)/100;
+  const mode=$('sell').value;
+  const price=mode==='realized'?bm.realized:mode==='listed'?bm.listed:bm.instant;
+  if(!price) return null;
+  let raw=0, ok=true;
+  it.res.forEach(([m,c])=>{ const p=matPrice[m]; if(!p) ok=false; raw+=(p||0)*c; });
+  if(!ok) return null;
+  const rrr=rrrOverride!==undefined?rrrOverride:returnRate();
+  const nutrition=it.value*0.1125;
+  const fee=nutrition*(+$('feeRate').value||0)/100;
+  const matCost=raw*(1-rrr);
+  const cost=matCost+fee;
+  const keep=mode==='instant'?(1-tax):(1-tax-setup);
+  const net=price*keep;
+  const profit=net-cost;
+  const be=cost/(1-tax-setup);
+  const fame=it.value*1.40625*($('prem').checked?1.5:1);
+  return {it,bm,price,raw,rrr,nutrition,fee,matCost,cost,net,profit,be,fame,keep,
+          margin:(price-be)/price*100, perFame:profit>=0?0:(-profit/fame),
+          bcity:(BONUS[it.line]||{})[it.slot]||null};
+}
+function silverPerFocus(id){
+  const city=$('city').checked, daily=$('daily').checked;
+  let off=city?0.367:0.152, on=city?0.539:0.435;
+  if(city&&daily){off*=1.1; on*=1.1;}
+  const a=calc(id,off), b=calc(id,on);
+  if(!a||!b||!DB.items[id].focus) return null;
+  return (b.profit-a.profit)/DB.items[id].focus;
+}
+const fmt=n=>Math.round(n).toLocaleString('ja-JP');
+const sgn=n=>(n>=0?'+':'−')+fmt(Math.abs(n));
+
+function render(){
+  $('rrrOut').textContent=(returnRate()*100).toFixed(1)+'%';
+  const hide=$('hideThin').checked, qty=+$('qty').value||1;
+  const list=[];
+  for(const id in DB.items){
+    const r=calc(id); if(!r) continue;
+    if(hide&&(r.bm.vol||0)<100&&id!==selected) continue;
+    list.push([id,r]);
+  }
+  list.sort((a,b)=>a[1].perFame-b[1].perFame||b[1].profit-a[1].profit);
+  const LIMIT=40, shown=list.slice(0,LIMIT);
+  $('tblnote').textContent=list.length>LIMIT
+    ?'上位 '+LIMIT+' 品を表示（条件に合う '+list.length+' 品のうち）。行をクリックすると内訳が上に出る。'
+    :list.length+' 品。行をクリックすると内訳が上に出る。';
+  const tb=$('rows'); tb.innerHTML='';
+  shown.forEach(([id,r])=>{
+    const spf=silverPerFocus(id);
+    const chip=r.margin>=10?'<span class="chip ok">'+r.margin.toFixed(1)+'%</span>'
+      :r.margin>=0?'<span class="chip thin">'+r.margin.toFixed(1)+'%</span>'
+      :'<span class="chip no">'+r.margin.toFixed(1)+'%</span>';
+    const tr=document.createElement('tr');
+    tr.tabIndex=0; if(id===selected) tr.className='sel';
+    tr.innerHTML='<td class="name l">'+r.it.ja+'</td><td class="id l">'+id+'</td>'
+      +'<td>'+fmt(r.fame)+'</td><td>'+r.nutrition.toFixed(1)+'</td><td>'+fmt(r.fee)+'</td>'
+      +'<td>'+fmt(r.matCost)+'</td><td>'+fmt(r.be)+'</td><td>'+fmt(r.price)+'</td>'
+      +'<td>'+chip+'</td>'
+      +'<td class="'+(r.profit>=0?'gain':'loss')+'">'+sgn(r.profit)+'</td>'
+      +'<td>'+r.perFame.toFixed(2)+'</td>'
+      +'<td>'+(spf===null?'–':spf.toFixed(1))+'</td>'
+      +'<td>'+Math.round(r.bm.vol||0)+'</td>';
+    const pick=()=>{selected=(selected===id?null:id); render();};
+    tr.addEventListener('click',pick);
+    tr.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pick();}});
+    tb.appendChild(tr);
+  });
+  const free=list.filter(([,r])=>r.profit>=0);
+  $('s1').textContent=free.length+' / '+list.length;
+  $('s1n').textContent=free.length?'最良 '+free[0][1].it.ja:'今の条件では1品もない';
+  if(list.length){
+    const best=list[0][1], b=free.length?free[0][1]:best;
+    $('s2').textContent=best.perFame.toFixed(2)+' 銀';
+    $('s2n').textContent=best.it.ja+'（名声1あたり）';
+    $('s3').textContent=fmt(b.fame*qty);
+    $('s3n').textContent=b.it.ja+' を '+qty+'個';
+    $('s4').textContent=sgn(b.profit*qty);
+    $('s4').className='v '+(b.profit>=0?'gain':'loss');
+    $('s4n').textContent='素材の仕入れに '+fmt(b.raw*qty)+' 必要';
+  }else{
+    ['s2','s3','s4'].forEach(k=>{$(k).textContent='–'; $(k).className='v';});
+    ['s2n','s3n','s4n'].forEach(k=>$(k).textContent='価格データが足りない');
+  }
+  const d=$('detail');
+  if(selected&&DB.items[selected]){
+    const r=calc(selected);
+    if(!r){d.hidden=true; return;}
+    const spf=silverPerFocus(selected);
+    const res=r.it.res.map(([m,c])=>'<div class="sub">'+matJa(m)+' × '+c+' @ '+fmt(matPrice[m])
+      +'</div><div class="r sub">'+fmt(matPrice[m]*c)+'</div>').join('');
+    const modeJa={realized:'直近7日の約定値',listed:'今の出品最安値',instant:'今の買い注文'}[$('sell').value];
+    d.hidden=false;
+    d.innerHTML='<h3>'+r.it.jaFull+'　<span style="font-family:var(--mono);font-size:12px;color:var(--faint)">'+r.it.en+' / '+selected+'</span></h3>'
+     +'<p class="sub" style="margin:-6px 0 12px">ゲーム内の市場ではこの名前で検索する。</p>'
+     +'<div class="ledger">'+res
+     +'<div>素材の生の合計</div><div class="r">'+fmt(r.raw)+'</div>'
+     +'<div class="sub">戻り率 '+(r.rrr*100).toFixed(1)+'% ぶんが戻る</div><div class="r sub">−'+fmt(r.raw*r.rrr)+'</div>'
+     +'<div>素材の実費</div><div class="r">'+fmt(r.matCost)+'</div>'
+     +'<div class="sub">使用料: 価値 '+r.it.value+' × 0.1125 = 栄養 '+r.nutrition.toFixed(1)+' × '+($('feeRate').value||0)+'/100</div><div class="r sub">'+fmt(r.fee)+'</div>'
+     +'<div class="tot">原価</div><div class="r tot">'+fmt(r.cost)+'</div>'
+     +'<div>損益ゼロで並べられる出品額</div><div class="r">'+fmt(r.be)+'</div>'
+     +'<div>闇市の売値（'+modeJa+'）</div><div class="r">'+fmt(r.price)+'</div>'
+     +'<div class="sub">手数料・税を引いた手取り（×'+r.keep.toFixed(3)+'）</div><div class="r sub">'+fmt(r.net)+'</div>'
+     +'<div class="tot">1個の損益</div><div class="r tot '+(r.profit>=0?'gain':'loss')+'">'+sgn(r.profit)+'</div>'
+     +'<div>名声/個（価値 '+r.it.value+' × 1.40625'+($('prem').checked?' × 1.5':'')+'）</div><div class="r">'+fmt(r.fame)+'</div>'
+     +'<div>名声1あたりの値段</div><div class="r">'+r.perFame.toFixed(2)+' 銀</div>'
+     +'<div>フォーカス '+r.it.focus+' を使うと</div><div class="r">'+(spf===null?'–':spf.toFixed(1)+' 銀/フォーカス')+'</div>'
+     +'</div>'
+     +'<p class="sub" style="max-width:56ch">'+(r.bcity
+        ?'この品のボーナス都市は <b class="hl">'+r.bcity+'</b>。カーレオンで作る（ロストゼロ）ならボーナスは付かないので「ボーナス都市で作る」はオフにする。'
+        :'カーレオンの製造ボーナスに入るかは未確認の品。作業台の表示で確かめる。')+'</p>';
+  }else d.hidden=true;
+}
+['feeRate','tax','setup','qty','sell','prem','city','daily','focus','hideThin'].forEach(k=>{
+  $(k).addEventListener('input',render); $(k).addEventListener('change',render);
+});
+$('src').addEventListener('change',()=>{loadMats(); render();});
+$('server').addEventListener('change',refresh);
+$('reload').addEventListener('click',refresh);
+loadMats(); render(); refresh();
+
+</script>
+</body>
+</html>

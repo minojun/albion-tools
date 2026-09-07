@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Albion Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Roboto+Mono:wght@400&display=swap">
+<style>
+:root{
+  --ground:#e9edec; --surface:#fff; --surface-2:#f3f6f5;
+  --ink:#131c1b; --muted:#5c6e6b; --faint:#869895;
+  --brass:#9a6b22; --rule:#ccd6d4; --rule-soft:#e0e7e6;
+  --jp:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic",system-ui,sans-serif;
+  --mincho:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho",serif;
+  --mono:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --ground:#0f1615; --surface:#17201e; --surface-2:#1d2725;
+  --ink:#e6ece9; --muted:#8fa29e; --faint:#6d807c;
+  --brass:#dca84e; --rule:#26332f; --rule-soft:#1f2b28;
+}}
+:root[data-theme="dark"]{
+  --ground:#0f1615; --surface:#17201e; --surface-2:#1d2725;
+  --ink:#e6ece9; --muted:#8fa29e; --faint:#6d807c;
+  --brass:#dca84e; --rule:#26332f; --rule-soft:#1f2b28;
+}
+*{box-sizing:border-box}
+body{margin:0; padding:0 20px 64px; background:var(--ground); color:var(--ink);
+  font-family:var(--jp); line-height:1.7; -webkit-font-smoothing:antialiased}
+.wrap{max-width:760px; margin:0 auto}
+header{border-top:3px solid var(--brass); padding:28px 0 20px}
+.eyebrow{font-size:11px; letter-spacing:.14em; color:var(--brass); font-weight:700; margin:0 0 4px}
+h1{font-family:var(--mincho); font-weight:800; font-size:clamp(28px,5vw,40px); margin:0; letter-spacing:.02em}
+.lede{color:var(--muted); font-size:14px; max-width:58ch; margin:10px 0 0}
+h2{font-family:var(--mincho); font-weight:600; font-size:17px; margin:34px 0 12px;
+  padding-bottom:7px; border-bottom:1px solid var(--rule)}
+.tools{display:grid; gap:14px}
+a.tool{display:block; text-decoration:none; color:inherit; background:var(--surface);
+  border:1px solid var(--rule); border-left:3px solid var(--brass); padding:16px 18px}
+a.tool:hover{background:var(--surface-2)}
+a.tool:focus-visible{outline:2px solid var(--brass); outline-offset:2px}
+.tool h3{font-size:16px; margin:0 0 5px; font-weight:700}
+.tool p{margin:0; font-size:13px; color:var(--muted)}
+.tool .meta{font-family:var(--mono); font-size:11px; color:var(--faint); margin-top:8px}
+.note{font-size:13px; color:var(--muted); background:var(--surface);
+  border:1px solid var(--rule); padding:14px 18px}
+.note p{margin:0 0 8px} .note p:last-child{margin:0}
+code{font-family:var(--mono); font-size:12.5px; background:var(--surface-2);
+  padding:1px 5px; border:1px solid var(--rule-soft)}
+footer{margin-top:36px; padding-top:14px; border-top:1px solid var(--rule);
+  font-size:11.5px; color:var(--faint); max-width:66ch}
+footer a{color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <p class="eyebrow">Albion Online</p>
+  <h1>Albion Tools</h1>
+  <p class="lede">アルビオン・オンラインを遊ぶ時の自分用の計算機を置く場所。価格は Albion Online Data Project の公開 API から、レシピと数値は公式ゲームデータから取っている。</p>
+</header>
+
+<h2>道具</h2>
+<div class="tools">
+  <a class="tool" href="bm-calc/">
+    <h3>闇市クラフト採算表</h3>
+    <p>カーレオンで素材を買って現地でクラフトし、闇市に並べた時の採算。作業台の「栄養100あたりのシルバー」を入れると、145品ぶんの使用料・損益ゼロで並べられる出品額・名声1あたりの値段が出る。</p>
+    <div class="meta">基礎3種 T4–T8 ／ 鞄・ケープ ／ 東・西・ヨーロッパ</div>
+  </a>
+</div>
+
+<h2>共通の前提</h2>
+<div class="note">
+  <p><b>使用料</b> = アイテム価値 × 0.1125 × 栄養100あたりの単価 ÷ 100。アイテム価値は素材の価値の合計で、加工済み素材は <code>T4=16</code> から1ティアごとに倍、エンチャント1段でも倍。</p>
+  <p><b>製造名声</b> = アイテム価値 × 1.40625（プレミアムで ×1.5）。</p>
+  <p><b>手取り</b> = 出品して売れた時 ×0.935（設定手数料2.5%＋売却税4%）／買い注文に即売り ×0.96。非プレミアムは売却税が8%。</p>
+  <p><b>素材の戻り率</b>は 基礎15.2% ／ ボーナス都市36.7% ／ フォーカス43.5% ／ 両方53.9%。デイリー生産ボーナスの日はボーナス都市がさらに1.1倍。</p>
+</div>
+
+<footer>
+価格: <a href="https://www.albion-online-data.com/">Albion Online Data Project</a>（利用者のクライアントが見た時だけ更新される。鮮度を必ず見る）。
+レシピ・アイテム価値・フォーカス消費・日本語名: <a href="https://github.com/ao-data/ao-bin-dumps">ao-data/ao-bin-dumps</a>。
+個人用の計算機で、Sandbox Interactive とは無関係。
+</footer>
+</div>
+</body>
+</html>
